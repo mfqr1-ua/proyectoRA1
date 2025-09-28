@@ -6,6 +6,8 @@ wait_vblank:
     jr   c, wait_vblank
     ret
 
+
+
 read_dpad:
     ld   a, $20            ; seleccionar dpad
     ld  [$FF00], a          
@@ -13,10 +15,33 @@ read_dpad:
     ld  a, [$FF00]          ; estabiliza
     ret
 
-main::
-    ld   hl, $9A09
-    ld   a,  $19
-    ld   [hl], a
+borrarLogo:
+    ld   hl, $9904
+    ld   b, $16
+    xor  a
+    .parteArriba:
+        call wait_vblank
+        ld   [hl+], a
+        dec  b
+        jr   nz, .parteArriba
+
+    ld   hl, $9924
+    ld   b, $0C
+    .parteAbajo:
+        call wait_vblank
+        ld   [hl+], a
+        dec  b
+        jr   nz, .parteAbajo
+
+        ld   hl, $9A09
+        ld   a,  $19
+        ld   [hl], a
+    ret
+
+
+main:
+
+call borrarLogo
 
 .loop:
     call read_dpad

@@ -1,16 +1,19 @@
 SUMMARY:
-	ROM0: 153 bytes used / 16231 free
+	ROM0: 182 bytes used / 16202 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Header"]
-	SECTION: $0150-$0198 ($0049 bytes) ["Entry point"]
+	SECTION: $0150-$01b5 ($0066 bytes) ["Entry point"]
 	         $0150 = wait_vblank
 	         $0158 = read_dpad
-	         $0164 = main
-	         $016a = main.loop
-	         $017a = main.esperaRigth
-	         $0183 = main.comprobarIzquierda
-	         $0190 = main.esperaLeft
-	EMPTY: $0199-$3fff ($3e67 bytes)
-	TOTAL EMPTY: $3f67 bytes
+	         $0164 = borrarLogo
+	         $016a = borrarLogo.parteArriba
+	         $0176 = borrarLogo.parteAbajo
+	         $0184 = main
+	         $0187 = main.loop
+	         $0197 = main.esperaRigth
+	         $01a0 = main.comprobarIzquierda
+	         $01ad = main.esperaLeft
+	EMPTY: $01b6-$3fff ($3e4a bytes)
+	TOTAL EMPTY: $3f4a bytes
