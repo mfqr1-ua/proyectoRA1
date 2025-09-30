@@ -1,80 +1,91 @@
-SECTION "Entry point", ROM0[$150]
+INCLUDE "constantes.inc"
 
-wait_vblank:
-    ld  a, [$FF44]          
-    cp   144
-    jr   c, wait_vblank
-    ret
-
+SECTION "Variables", WRAM0
+disparo_cd: ds 1          ; cooldown
+jug_L: ds 1
+jug_H: ds 1
 
 
-read_dpad:
-    ld   a, $20            ; seleccionar dpad
-    ld  [$FF00], a          
-    ld  a, [$FF00]
-    ld  a, [$FF00]          ; estabiliza
-    ret
-
-borrarLogo:
-    ld   hl, $9904
-    ld   b, $16
-    xor  a
-    .parteArriba:
-        call wait_vblank
-        ld   [hl+], a
-        dec  b
-        jr   nz, .parteArriba
-
-    ld   hl, $9924
-    ld   b, $0C
-    .parteAbajo:
-        call wait_vblank
-        ld   [hl+], a
-        dec  b
-        jr   nz, .parteAbajo
-
-        ld   hl, $9A09
-        ld   a,  $19
-        ld   [hl], a
-    ret
-
+SECTION "Main Code", ROM0
 
 main:
-
-call borrarLogo
+    call borrarLogo
+    call colocaJugador
+   
+    xor  a
+    ld  [disparo_cd], a     ; listo para disparar (sin cooldown)
 
 .loop:
-    call read_dpad
+    ; Mover todas las balas
+    call mover_balas ;falta por implementar
 
-    bit  0, a
-    jr   nz, .comprobarIzquierda         ; si no, miramos izquierda
+    ; Cooldown de disparo 
+    ld   a, [disparo_cd]
+    or   a
+    jr   z, .puede_disparar
+    dec  a
+    ld  [disparo_cd], a
+    jr   .mover_jugador
 
+.puede_disparar:
+    call leer_botones
+    bit  0, a               
+    jr   nz, .mover_jugador
+
+    ; Crear bala justo encima del jugador
+
+    call setJugador
+    push hl
+    ld   de, $FFE0          ; HL = HL - 32 (una fila arriba)
+    add  hl, de
     call wait_vblank
-    xor  b                       
-    ld   [hl], b                 ; borra casilla actual
-    inc  hl                      ; avanza a la derecha
-    ld   a, $19
-    ld   [hl], a                 
-
-.esperaRigth:              
-    call read_dpad
-    bit  0, a
-    jr   z, .esperaRigth
-    jr   .loop
-
-.comprobarIzquierda:
-    bit  1, a
-    jr   nz, .loop               ; si tampoco, no hacemos nada
-
-    call wait_vblank
-    xor  b                       
-    ld   [hl], b                 ; borra casilla actual
-    dec  hl                      ; retrocede a la izquierda
     ld   a, $19
     ld   [hl], a
+    pop hl
 
-.esperaLeft:               
+    ; Reinicia cooldown
+    ld   a, 15
+    ld  [disparo_cd], a
+
+.mover_jugador:
+    
     call read_dpad
-    bit  1, a 
-    jr   z, .esperaLeft
+
+    ; Derecha (bit0=0)
+    bit  0, a
+    jr   nz, .check_left
+    call wait_vblank
+    xor  b
+    ld   [hl], b
+    inc  hl
+    ld   a, $19
+    ld   [hl], a
+    ld   a, l
+    ld  [jug_L], a
+    ld   a, h
+    ld  [jug_H], a
+.wait_right:
+    call read_dpad
+    bit  0, a
+    jr   z, .wait_right
+    jr   .loop
+
+.check_left:
+    ; Izquierda (bit1=0)
+    bit  1, a
+    jr   nz, .loop
+    call wait_vblank
+    xor  b
+    ld   [hl], b
+    dec  hl
+    ld   a, $19
+    ld   [hl], a
+    ld   a, l
+    ld  [jug_L], a
+    ld   a, h
+    ld  [jug_H], a
+.wait_left:
+    call read_dpad
+    bit  1, a
+    jr   z, .wait_left
     jr   .loop

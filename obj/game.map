@@ -1,19 +1,37 @@
 SUMMARY:
-	ROM0: 182 bytes used / 16202 free
+	ROM0: 293 bytes used / 16091 free
+	WRAM0: 3 bytes used / 4093 free
 
 ROM0 bank #0:
-	EMPTY: $0000-$00ff ($0100 bytes)
+	SECTION: $0000-$0072 ($0073 bytes) ["Main Code"]
+	         $0000 = main
+	         $000a = main.loop
+	         $0019 = main.puede_disparar
+	         $0034 = main.mover_jugador
+	         $004c = main.wait_right
+	         $0055 = main.check_left
+	         $006a = main.wait_left
+	SECTION: $0073-$00d3 ($0061 bytes) ["utils"]
+	         $0073 = borrarLogo
+	         $0080 = limpiaArriba
+	         $008d = limpiaAbajo
+	         $0095 = colocaJugador
+	         $009f = guardarJugador
+	         $00a8 = setJugador
+	         $00b1 = wait_vblank
+	         $00b9 = read_dpad
+	         $00c5 = leer_botones
+	SECTION: $00d4-$00d4 ($0001 byte) ["funcionesMovimiento"]
+	         $00d4 = mover_balas
+	EMPTY: $00d5-$00ff ($002b bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Header"]
-	SECTION: $0150-$01b5 ($0066 bytes) ["Entry point"]
-	         $0150 = wait_vblank
-	         $0158 = read_dpad
-	         $0164 = borrarLogo
-	         $016a = borrarLogo.parteArriba
-	         $0176 = borrarLogo.parteAbajo
-	         $0184 = main
-	         $0187 = main.loop
-	         $0197 = main.esperaRigth
-	         $01a0 = main.comprobarIzquierda
-	         $01ad = main.esperaLeft
-	EMPTY: $01b6-$3fff ($3e4a bytes)
-	TOTAL EMPTY: $3f4a bytes
+	EMPTY: $0150-$3fff ($3eb0 bytes)
+	TOTAL EMPTY: $3edb bytes
+
+WRAM0 bank #0:
+	SECTION: $c000-$c002 ($0003 bytes) ["Variables"]
+	         $c000 = disparo_cd
+	         $c001 = jug_L
+	         $c002 = jug_H
+	EMPTY: $c003-$cfff ($0ffd bytes)
+	TOTAL EMPTY: $0ffd bytes
