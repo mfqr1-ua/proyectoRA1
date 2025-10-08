@@ -1,0 +1,238 @@
+
+;;BALAS
+
+; ------------------------------------------------------------
+; crear_bala_entidad_desde_player
+; - Lee (x,y) del jugador en slot 0 ($C000..$C003).
+; - Si y==0, no crea nada.
+; - Busca slot libre entre los ya usados (attrs bit0=0).
+; - Si no hay libre, abre uno nuevo con man_entity_alloc (si hay sitio).
+; - Escribe [x, y-1, $19, attrs=1] y PINTA en el BG.
+; ------------------------------------------------------------
+crear_bala_entidad_desde_player:
+    ; (x,y) del jugador → E=x, D=y
+    call leer_slot0_posicion_y_tile
+
+    ; si ya está en la primera fila, no se puede colocar arriba
+    ld   a, d
+    or   a
+    ret  z
+
+    ; y = y - 1 para la bala
+    dec  d
+
+    ; ------------------ calcular slots_totales = next_free_entity / 4 (SIN SRL) ------------------
+    ld   a, [next_free_entity]   ; bytes usados (0,4,8,...)
+    ld   b, 0                    ; B = slots_totales
+.cuenta_slots:
+    cp   0
+    jr   z, .slots_listos
+    sub  4
+    inc  b
+    jr   .cuenta_slots
+.slots_listos:
+    ; B = nº de slots actualmente usados (>=1 si existe el jugador)
+
+    ; ------------------ buscar slot libre entre 1..(B-1) ------------------
+    ld   a, b
+    cp   1
+    jr   z, .abrir_nuevo         ; solo está el jugador → no hay nada que revisar
+
+    ld   hl, $C000+4             ; primer slot de bala
+    ld   c, b
+    dec  c                        ; C = B-1 (nº de slots de balas a revisar)
+.buscar_libre:
+    ; leer attrs (byte 3 del slot)
+    ld   a, [hl]                 ; x
+    inc  hl
+    ld   a, [hl]                 ; y
+    inc  hl
+    ld   a, [hl]                 ; tile
+    inc  hl
+    ld   a, [hl]                 ; attrs
+    and  1
+    jr   z, .usar_este           ; libre si bit0=0
+
+    ; avanzar al siguiente slot (volver a x y +4)
+    inc  hl                      ; estamos en attrs → +1
+    dec  hl                      ; volver a tile
+    dec  hl                      ; volver a y
+    dec  hl                      ; volver a x
+    ld   bc, 4
+    add  hl, bc
+    dec  c
+    jr   nz, .buscar_libre
+
+.abrir_nuevo:
+    ; si no había libre, abrir uno nuevo (si queda sitio)
+    ld   a, [next_free_entity]
+    cp   40                      ; 10 slots x 4 bytes = 40
+    ret  nc                      ; lleno, no crear
+    call man_entity_alloc        ; HL = slot nuevo
+    jr   .usar_este_esHL
+
+.usar_este:
+    ; HL ahora está en attrs; queremos colocar HL al inicio de slot (x)
+    ; attrs está en (slot+3), así que retrocedemos 3:
+    dec  hl     ; -> tile
+    dec  hl     ; -> y
+    dec  hl     ; -> x
+
+.usar_este_esHL:
+    ; escribir la bala: [x, y-1, $19, attrs=1]
+    ld   [hl], e        ; x
+    inc  hl
+    ld   [hl], d        ; y' (y-1)
+    inc  hl
+    ld   a, $19
+    ld   [hl], a        ; tile
+    inc  hl
+    ld   a, 1
+    ld   [hl], a        ; attrs: activo=1
+
+    ; pintar en BG el tile $19 en (x=e, y=d)
+    call calcular_hl_bg_desde_de
+    call wait_vblank
+    ld   a, $19
+    ld   [hl], a
+    ret
+; ------------------------------------------------------------
+; mover_balas
+; - Recorre slots 1..(slots_totales-1).
+; - Si attrs.bit0=0 → libre, salta.
+; - Si y==0 → borrar y LIBERAR slot (attrs=0, tile=0).
+; - Si no, borrar celda, y--, guardar y pintar tile $19 en la nueva celda.
+; ------------------------------------------------------------
+mover_balas:
+    ; slots_totales = next_free_entity / 4  (SIN SRL)
+    ld   a, [next_free_entity]
+    ld   b, 0
+.mb_contar:
+    cp   0
+    jr   z, .mb_listos
+    sub  4
+    inc  b
+    jr   .mb_contar
+.mb_listos:
+    ; si B <= 1 → no hay balas (solo jugador)
+    ld   a, b
+    cp   2
+    ret  c                ; B=0 o B=1 → return
+
+    ; HL = primer slot de bala (slot 1)
+    ld   hl, $C000+4
+    ; C = nº de slots bala a revisar = (B-1)
+    ld   c, b
+    dec  c
+
+.mb_loop:
+    ; leer attrs (byte 3)
+    ld   a, [hl]          ; x
+    inc  hl
+    ld   a, [hl]          ; y
+    inc  hl
+    ld   a, [hl]          ; tile
+    inc  hl
+    ld   a, [hl]          ; attrs
+    and  1
+    jr   z, .mb_siguiente_ya        ; libre → siguiente
+
+    ; volver a inicio del slot y leer x,y,tile en regs
+    dec  hl               ; -> tile
+    dec  hl               ; -> y
+    dec  hl               ; -> x
+    ld   e, [hl]          ; x
+    inc  hl
+    ld   d, [hl]          ; y
+    inc  hl
+    ld   a, [hl]          ; tile (guardado en A)
+    push af               ; guardar tile
+    ; HL ahora apunta a tile; retrocede a x
+    dec  hl
+    dec  hl
+
+    ; borrar celda actual (y,x)
+    push hl
+    push de
+    call calcular_hl_bg_desde_de
+    call wait_vblank
+    xor  a
+    ld   [hl], a
+    pop  de
+    pop  hl
+
+    ; si y==0 → liberar slot (tile=0, attrs=0)
+    ld   a, d
+    or   a
+    jr   nz, .mb_subir
+
+    ; liberar: tile=0, attrs=0
+    inc  hl              ; y
+    inc  hl              ; tile
+    xor  a
+    ld   [hl], a         ; tile = 0
+    inc  hl              ; attrs
+    ld   [hl], a         ; attrs = 0 (libre)
+    pop  af              ; descartar tile
+    jr   .mb_siguiente
+
+.mb_subir:
+    ; y = y - 1 y guardar
+    dec  d
+    inc  hl              ; y
+    ld   [hl], d
+    dec  hl
+    dec  hl              ; volver a x
+
+    ; pintar en nueva celda con tile original ($19)
+    push hl
+    push de
+    call calcular_hl_bg_desde_de
+    call wait_vblank
+    pop  af              ; A = tile original (en tu caso $19)
+    ld   [hl], a
+    pop  hl
+
+.mb_siguiente:
+    ; avanzar al siguiente slot (4 bytes)
+    ld   bc, 4
+    add  hl, bc
+    dec  c
+    jr   nz, .mb_loop
+    ret
+
+.mb_siguiente_ya:
+    ; estamos en attrs; saltamos al inicio del siguiente slot: +1 (attrs) -3 (volver) +4 (siguiente) = +2 neto
+    inc  hl              ; estaba en attrs → +1
+    dec  hl              ; tile
+    dec  hl              ; y
+    dec  hl              ; x
+    ld   bc, 4
+    add  hl, bc
+    dec  c
+    jr   nz, .mb_loop
+    ret
+
+
+
+
+
+;;main 
+; --- mover todas las balas entidades ---
+    call mover_balas
+
+    ; --- disparo con cooldown ---
+    ld   a, [disparo_cd]
+    or   a
+    jr   z, .intenta_disparar
+    dec  a
+    ld  [disparo_cd], a
+    jr   .mueve_jugador
+
+.intenta_disparar:
+    call leer_botones
+    bit  0, a                 ; A pulsado? (0=si)
+    jr   nz, .mueve_jugador
+    call crear_bala_entidad_desde_player
+    ld   a, 15                ; ~pequeño retardo entre disparos
+    ld  [disparo_cd], a

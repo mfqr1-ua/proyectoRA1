@@ -1,2 +1,6 @@
+DEF SPR_X_OFF    = 0
+DEF SPR_Y_OFF    = 1
+DEF SPR_TILE_OFF = 2
+DEF SPR_ATT_OFF  = 3
 
 
