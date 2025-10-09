@@ -1,8 +1,3 @@
-; ============================
-; Entity Manager + draw (sin constantes)
-; Layout slot sprite (4 bytes): x, y, tile, attrs
-; Tabla en $C000 con 10 entidades -> 40 bytes
-; ============================
 
 SECTION "EM Data", WRAM0[$C000]
 component_sprite:      ds 40     ; $C000..$C027

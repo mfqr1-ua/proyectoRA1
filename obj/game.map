@@ -1,49 +1,73 @@
 SUMMARY:
-	ROM0: 411 bytes used / 15973 free
-	WRAM0: 42 bytes used / 4054 free
+	ROM0: 701 bytes used / 15683 free
+	WRAM0: 45 bytes used / 4051 free
 
 ROM0 bank #0:
-	SECTION: $0000-$0083 ($0084 bytes) ["funcionesMovimiento"]
-	         $0000 = calcular_hl_bg_desde_de
-	         $0009 = calcular_hl_bg_desde_de.y_loop
-	         $0010 = calcular_hl_bg_desde_de.y_hecho
-	         $0017 = leer_slot0_posicion_y_tile
-	         $001e = escribir_slot0_x
-	         $0023 = mover_jugador_con_entidad
-	         $003f = mover_jugador_con_entidad.x_ok_der
-	         $004e = mover_jugador_con_entidad.esperar_suelta_der
-	         $0056 = mover_jugador_con_entidad.comprobar_izquierda
-	         $006d = mover_jugador_con_entidad.x_ok_izq
-	         $007c = mover_jugador_con_entidad.esperar_suelta_izq
-	SECTION: $0084-$00b6 ($0033 bytes) ["EM Code"]
-	         $0084 = man_entity_init
-	         $0095 = man_entity_alloc
-	         $00a8 = ecs_init_player
-	SECTION: $00b7-$00cc ($0016 bytes) ["Main Code"]
-	         $00b7 = main
-	         $00c6 = main.loop
-	EMPTY: $00cd-$00ff ($0033 bytes)
+	SECTION: $0000-$00e3 ($00e4 bytes) ["Balas Code"]
+	         $0000 = crear_bala_entidad_desde_player
+	         $000c = crear_bala_entidad_desde_player.ptr_ok
+	         $001b = crear_bala_entidad_desde_player.yok
+	         $0033 = mover_balas
+	         $0051 = mover_balas.b_ok
+	         $0053 = mover_balas.loop_slots_1
+	         $0079 = mover_balas.no_top_row_1
+	         $0088 = mover_balas.next_slot_1
+	         $008e = mover_balas.after_first
+	         $0093 = mover_balas.scan_tail
+	         $00a7 = mover_balas.no_tail
+	         $00a8 = mover_balas.do_tail
+	         $00a9 = mover_balas.loop_slots_2
+	         $00cf = mover_balas.no_top_row_2
+	         $00de = mover_balas.next_slot_2
+	EMPTY: $00e4-$00ff ($001c bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Header"]
-	SECTION: $0150-$01cd ($007e bytes) ["utils"]
-	         $0150 = borrarLogo
-	         $015d = limpiaArriba
-	         $016a = limpiaAbajo
-	         $0172 = colocaJugador
-	         $0179 = wait_vblank
-	         $0181 = read_dpad
-	         $018d = leer_botones
-	         $019c = memset_256
-	         $01a1 = memcpy_256
-	         $01a8 = dibujaJugador
-	         $01bc = dibujaJugador.y_loop
-	         $01c3 = dibujaJugador.y_done
-	EMPTY: $01ce-$3fff ($3e32 bytes)
-	TOTAL EMPTY: $3e65 bytes
+	SECTION: $0150-$01d3 ($0084 bytes) ["funcionesMovimiento"]
+	         $0150 = calcular_hl_bg_desde_de
+	         $0159 = calcular_hl_bg_desde_de.y_loop
+	         $0160 = calcular_hl_bg_desde_de.y_hecho
+	         $0167 = leer_slot0_posicion_y_tile
+	         $016e = escribir_slot0_x
+	         $0173 = mover_jugador_con_entidad
+	         $018f = mover_jugador_con_entidad.x_ok_der
+	         $019e = mover_jugador_con_entidad.esperar_suelta_der
+	         $01a6 = mover_jugador_con_entidad.comprobar_izquierda
+	         $01bd = mover_jugador_con_entidad.x_ok_izq
+	         $01cc = mover_jugador_con_entidad.esperar_suelta_izq
+	SECTION: $01d4-$0251 ($007e bytes) ["utils"]
+	         $01d4 = borrarLogo
+	         $01e1 = limpiaArriba
+	         $01ee = limpiaAbajo
+	         $01f6 = colocaJugador
+	         $01fd = wait_vblank
+	         $0205 = read_dpad
+	         $0211 = leer_botones
+	         $0220 = memset_256
+	         $0225 = memcpy_256
+	         $022c = dibujaJugador
+	         $0240 = dibujaJugador.y_loop
+	         $0247 = dibujaJugador.y_done
+	SECTION: $0252-$02a5 ($0054 bytes) ["Main Code"]
+	         $0252 = main
+	         $026b = main.bucle_principal
+	         $028c = main.bloquear
+	         $0293 = main.A_no_pulsado
+	         $0297 = main.no_disparo
+	         $02a1 = main.continuar
+	SECTION: $02a6-$02d8 ($0033 bytes) ["EM Code"]
+	         $02a6 = man_entity_init
+	         $02b7 = man_entity_alloc
+	         $02ca = ecs_init_player
+	EMPTY: $02d9-$3fff ($3d27 bytes)
+	TOTAL EMPTY: $3d43 bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c029 ($002a bytes) ["EM Data"]
 	         $c000 = component_sprite
 	         $c028 = num_entities_alive
 	         $c029 = next_free_entity
-	EMPTY: $c02a-$cfff ($0fd6 bytes)
-	TOTAL EMPTY: $0fd6 bytes
+	SECTION: $c02a-$c02c ($0003 bytes) ["Variables"]
+	         $c02a = disparo_cd
+	         $c02b = balas_tick
+	         $c02c = a_lock
+	EMPTY: $c02d-$cfff ($0fd3 bytes)
+	TOTAL EMPTY: $0fd3 bytes
