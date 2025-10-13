@@ -1,47 +1,39 @@
-
 SECTION "EM Data", WRAM0[$C000]
-component_sprite:      ds 40     ; $C000..$C027
-num_entities_alive:    ds 1      ; $C028
-next_free_entity:      ds 1      ; $C029
+component_sprite:      ds 40     ;  reserva 40 bytes para 10 entidades (x,y,tile,attrs)
+num_entities_alive:    ds 1      ;  guarda cuántas entidades hay vivas
+next_free_entity:      ds 1      ;  guarda el offset del siguiente slot libre 
 
 SECTION "EM Code", ROM0
 
-
-; Inicializa tabla y contadores a 0
 man_entity_init:
-    ld   hl, component_sprite
-    ld   b,  40
-    xor  a
-    call memset_256
-    xor  a
-    ld  [next_free_entity], a   ; offset=0
-    ld  [num_entities_alive], a ; 0 entidades
+    ld   hl, component_sprite    
+    ld   b,  40                  
+    xor  a                       
+    call memset_256              ;  limpia los 40 bytes de la tabla
+    xor  a                       
+    ld  [next_free_entity], a    
+    ld  [num_entities_alive], a  
     ret
 
-; Reserva slot: HL = $C000 + offset; offset += 4; ++alive
 man_entity_alloc:
-    ld   a, [next_free_entity]  ; A = offset (0,4,8,...)
-    ld   h, $C0
-    ld   l, a                   ; HL = $C000 + offset
-    add  a, 4                   ; siguiente offset
-    ld  [next_free_entity], a
-    ld   a, [num_entities_alive]
-    inc  a
-    ld  [num_entities_alive], a
-    ret                         ; HL apunta al slot libre
+    ld   a, [next_free_entity]   ;  carga el offset del siguiente slot libre 
+    ld   h, $C0                 
+    ld   l, a                    ;  hace HL = $C000 + offset (apunta al slot libre)
+    add  a, 4                    ;  suma 4 bytes
+    ld  [next_free_entity], a    ;  guarda el nuevo offset libre
+    ld   a, [num_entities_alive] 
+    inc  a                       ;  incrementa el número de entidades
+    ld  [num_entities_alive], a  
+    ret                          
 
-; Crea player en el primer slot: x=9, y=16, tile=$19, attrs=0
 ecs_init_player:
-    call man_entity_alloc       ; HL = puntero al slot 0
-    ld   a, 9
-    ld  [hl+], a                ; x
-    ld   a, 16
-    ld  [hl+], a                ; y
-    ld   a, $19
-    ld  [hl+], a                ; tile
-    xor  a
-    ld  [hl], a                 ; attrs
+    call man_entity_alloc        ;  reserva el 0 para el jugador
+    ld   a, 9                    ;  pone x inicial del jugador
+    ld  [hl+], a                
+    ld   a, 16                   ;  pone y inicial 
+    ld  [hl+], a                 
+    ld   a, $20                  ;  pone el tile base del jugador 
+    ld  [hl+], a                 
+    xor  a                       
+    ld  [hl], a                  
     ret
-
-; ----------------------------------------------------------
-

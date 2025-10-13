@@ -1,109 +1,144 @@
+INCLUDE "constantes.inc"
+
 SECTION "utils", ROM0
 
-
-
-borrarLogo:
-    ld   hl, $9904
-    ld   b,  $16
-    xor  a
-    call limpiaArriba
-    call limpiaAbajo
-    ret
-limpiaArriba:
-    call wait_vblank
-    ld   [hl+], a
-    dec  b
-    jr   nz, limpiaArriba
-
-    ld   hl, $9924
-    ld   b,  $0C
-    ret
-limpiaAbajo:
-    call wait_vblank
-    ld   [hl+], a
-    dec  b
-    jr   nz, limpiaAbajo
+borrar_logo:
+    ld   hl, $9904                ; apunta a la zona superior del BG
+    ld   b,  $16                  ; pone 22 bytes a 0 arriba
+    xor  a                        ; pone A=0 (tile 0)
+    call limpiar_arriba
+    call limpiar_abajo
     ret
 
-colocaJugador:    ; Colocar jugador
-    ld   hl, $9A09
-    ld   a,  $19
-    ld   [hl], a
+limpiar_arriba:
+    ld   [hl+], a                 ; escribe 0 y avanza
+    dec  b                        
+    jr   nz, limpiar_arriba       
+    ld   hl, $9924                ; cambia a la zona inferior
+    ld   b,  $0C                  ;  pone 12 bytes a 0 abajo
     ret
 
+limpiar_abajo:
+    ld   [hl+], a                 
+    dec  b                        
+    jr   nz, limpiar_abajo
+    ret
 
-    
 wait_vblank:
-    ld  a, [$FF44]
-    cp  144
-    jr  c, wait_vblank
+    ld  a, [$FF44]                
+    cp  144                       
+    jr  c, wait_vblank            
     ret
 
-; Lee DPAD
 read_dpad:
-    ld   a, $20
+    ld   a, $20                   
     ld  [$FF00], a
-    ld   a, [$FF00]
-    ld   a, [$FF00]
+    ld   a, [$FF00]               
+    ld   a, [$FF00]               
     ret
 
-; Lee botones A/B/Start/Select
-leer_botones:
-    ld   a, $10
+leer_botones:                     ; A/B/Start/Select
+    ld   a, $10                  
     ld  [$FF00], a
-    ld   a, [$FF00]
-    ld   a, [$FF00]
-    ld   a, [$FF00]
+    ld   a, [$FF00]               
+    ld   a, [$FF00]               
+    ld   a, [$FF00]               
     ret
 
 memset_256:
-    ld [hl+], a
-    dec b
-    jr nz, memset_256
+    ld  [hl+], a                  
+    dec b                         
+    jr  nz, memset_256            
     ret
+
 memcpy_256:
-    ld a, [hl+]
-    ld [de], a
-    inc de
-    dec b
-    jr nz, memcpy_256
+    ld   a, [hl+]                 
+    ld  [de], a                   
+    inc  de                       
+    dec  b                        
+    jr  nz, memcpy_256            
     ret
 
-INCLUDE "constantes.inc"
+lcd_off:
+    ld   a, [$FF40]               
+    res  7, a                     ;  apaga LCD
+    ld  [$FF40], a
+    ret
+
+lcd_on:
+    ld   a, [$FF40]               ;  lee LCDC
+    set  7, a                     ;  enciende LCD 
+    ld  [$FF40], a
+    ret
+
+copy_tiles:
+    ld   a, [hl+]                 ;  lee byte de ROM
+    ld  [de], a                   ;  escribe byte en VRAM
+    inc  de                       
+    dec  b                        
+    ld   a, b                     
+    cp   0
+    jr   nz, copy_tiles           
+    ret
 
 
-dibujaJugador:
-    ; --- leer x, y, tile ---
-    ld   a, [$C000]      ; x
-    ld   d, a            ; D = x
-    ld   a, [$C001]      ; y
-    ld   e, a            ; E = y
-    ld   a, [$C002]      ; tile
-    push af              ; guarda tile
+pintar_bloque_3x2_desde_xy_con_base:
+    push af                      
+    push de                       
+    call calcular_direccion_bg_desde_xy  
+    call wait_vblank             
+    pop  de
+    pop  af
 
-    ; --- HL = $9800 + y*32 ---
-    ld   hl, $9800
-    ld   a, e            ; A = y
-    ld   b, 0
-    ld   c, 32           ; BC = 32
-.y_loop:
-    or   a
-    jr   z, .y_done
-    add  hl, bc          ; HL += 32
-    dec  a
-    jr   .y_loop
-.y_done:
+    ld   [hl], a                  ; escribe TL = base
+    inc  hl
+    inc  a
+    ld   [hl], a                  ; escribe Tm = base+1
+    inc  hl
+    inc  a
+    ld   [hl], a                  ; escribe TR = base+2
 
-    ; --- HL += x ---
-    ld   a, d            ; A = x
-    ld   b, 0
-    ld   c, a            ; BC = x
+    ld   bc, 30                   ; baja una fila (32) y vuelve 2 a la izq
     add  hl, bc
 
-    call wait_vblank
-
-    pop  af              ; A = tile
-    ld   [hl], a
+    inc  a
+    ld   [hl], a                  
+    inc  hl
+    inc  a
+    ld   [hl], a                  
+    inc  hl
+    inc  a
+    ld   [hl], a                  
     ret
 
+borrar_bloque_3x2_desde_xy:
+    push de                       ;  guarda (x,y)
+    call calcular_direccion_bg_desde_xy  
+    call wait_vblank              
+    pop  de
 
+    xor  a                       
+
+    ld   [hl], a                  
+    inc  hl
+    ld   [hl], a                 
+    inc  hl
+    ld   [hl], a                  
+
+    ld   bc, 30                  
+    add  hl, bc
+
+    ld   [hl], a                  
+    inc  hl
+    ld   [hl], a                 
+    inc  hl
+    ld   [hl], a                
+    ret
+
+dibujaJugador:
+    ld   a, [$C000]               ;  carga x del jugador
+    ld   e, a
+    ld   a, [$C001]               ;  carga y del jugador
+    ld   d, a
+    ld   a, [$C002]               
+    jp   pintar_bloque_3x2_desde_xy_con_base 

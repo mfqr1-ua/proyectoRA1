@@ -2,118 +2,96 @@ INCLUDE "constantes.inc"
 
 SECTION "funcionesMovimiento", ROM0
 
-
-calcular_hl_bg_desde_de:
-    push de                 ; guardar (y,x)
-    ld   hl, $9800          ; base BG
-    ld   a, d               ; A = y
+calcular_direccion_bg_desde_xy:
+    push de                 ;  guarda (y,x)
+    ld   hl, $9800          ;  carga base del BG map
+    ld   a, d               
     ld   b, 0
-    ld   c, 32              ; BC = 32
-.y_loop:
-    or   a
-    jr   z, .y_hecho
-    add  hl, bc             ; HL += 32 por cada fila
-    dec  a
-    jr   .y_loop
-.y_hecho:
-    pop  de                 ; recuperar (y,x)
-    ld   a, e               ; A = x
+    ld   c, 32             
+.loop_filas:
+    or   a                  ; comprueba si y==0
+    jr   z, .filas_ok       
+    add  hl, bc             ; siguiente fila
+    dec  a                  ; decrementa y
+    jr   .loop_filas        ; repite mientras queden filas
+.filas_ok:
+    pop  de                 ; recupera (y,x)
+    ld   a, e               
     ld   b, 0
-    ld   c, a               ; BC = x
-    add  hl, bc             ; HL += x
+    ld   c, a               
+    add  hl, bc             
     ret
 
 
-leer_slot0_posicion_y_tile:
-    ld   hl, $C000
-    ld   e, [hl]            ; x
+;  lee x,y del slot0 en E,D
+leer_slot0_xy:
+    ld   hl, $C000          ;  apunta al slot0
+    ld   e, [hl]            ;  lee x en E
     inc  hl
-    ld   d, [hl]            ; y
+    ld   d, [hl]            ;  lee y en D
     ret
 
 
+;  escribe E en slot0.x
 escribir_slot0_x:
-    ld   hl, $C000
-    ld   [hl], e
+    ld   hl, $C000          
+    ld   [hl], e            ;  guarda x
     ret
 
-mover_jugador_con_entidad:
-    call read_dpad
+mover_jugador:
+    call read_dpad         
 
-    ; ---------- Derecha (bit0=0) ----------
-    bit  0, a
-    jr   nz, .comprobar_izquierda
+    bit  0, a               
+    jr   nz, .comprobar_izquierda ; si no pulsa derecha, salta a izquierda
 
-    ; 1) Obtener (x,y) del slot
-    call leer_slot0_posicion_y_tile      ; E=x, D=y
+    call leer_slot0_xy      ; pone E=x, D=y del jugador
 
-    ; 2) Borrar la celda actual
     push de
-    call calcular_hl_bg_desde_de         ; HL = BG(y,x)
-    call wait_vblank
-    xor  a
-    ld   [hl], a                         ; poner tile 0 (vacío)
+    call borrar_bloque_3x2_desde_xy ; borra el bloque actual 3x2
     pop  de
 
-    ; 3) x = x + 1 (con límite 31)
-    inc  e
+    inc  e                  
     ld   a, e
-    cp   32
-    jr   c, .x_ok_der
-    ld   e, 31
-.x_ok_der:
-    call escribir_slot0_x                ; slot0.x = E
+    cp   30                 
+    jr   c, .x_der_ok       ;si x<30, salta a x_der_ok
+    ld   e, 29              ; satura a 29 (3 tiles de ancho)
+.x_der_ok:
+    call escribir_slot0_x  
 
-    ; 4) Pintar en la nueva celda el tile del slot
     push de
-    call calcular_hl_bg_desde_de         ; HL = nueva celda
-    call wait_vblank
-    ld   a, [$C002]                      ; tile del slot0 (p.ej. $19)
-    ld   [hl], a
+    ld   a, [$C002]         ;  carga el tile base (TL) del bloque
+    call pintar_bloque_3x2_desde_xy_con_base ;  pinta el bloque 3x2 en la nueva posición
     pop  de
 
-.esperar_suelta_der:
-    call read_dpad
+.esperar_soltar_derecha:
+    call read_dpad          ; espera a soltar derecha
     bit  0, a
-    jr   z, .esperar_suelta_der
+    jr   z, .esperar_soltar_derecha
     ret
 
 .comprobar_izquierda:
-    ; ---------- Izquierda (bit1=0) ----------
-    bit  1, a
-    ret  nz
+    bit  1, a               ; comprueba izquierda (activo a 0)
+    ret  nz                 ; si no pulsa izquierda, sale
 
-    ; 1) Obtener (x,y)
-    call leer_slot0_posicion_y_tile      ; E=x, D=y
+    call leer_slot0_xy      ; pone E=x, D=y del jugador
 
-    ; 2) Borrar celda actual
     push de
-    call calcular_hl_bg_desde_de
-    call wait_vblank
-    xor  a
-    ld   [hl], a
+    call borrar_bloque_3x2_desde_xy ; borra el bloque actual 3x2
     pop  de
 
-    ; 3) x = x - 1 (con límite 0)
-    dec  e
-    bit  7, e                            ; ¿bajó de 0? (FF)
-    jr   z, .x_ok_izq
-    ld   e, 0
-.x_ok_izq:
-    call escribir_slot0_x
-
-    ; 4) Pintar tile del slot en la nueva celda
+    dec  e                  
+    bit  7, e                ;comprueba si bajó de 0 (FF)
+    jr   z, .x_izq_ok       ; si no bajó, salta a x_izq_ok
+    ld   e, 0              
+.x_izq_ok:
+    call escribir_slot0_x   
     push de
-    call calcular_hl_bg_desde_de
-    call wait_vblank
-    ld   a, [$C002]                      ; SIEMPRE leemos el tile del slot
-    ld   [hl], a
+    ld   a, [$C002]         ;
+    call pintar_bloque_3x2_desde_xy_con_base ; pinta el bloque 3x2 en la nueva posición
     pop  de
 
-.esperar_suelta_izq:
-    call read_dpad
+.esperar_soltar_izquierda:
+    call read_dpad          ; espera a soltar izquierda
     bit  1, a
-    jr   z, .esperar_suelta_izq
+    jr   z, .esperar_soltar_izquierda
     ret
-
-

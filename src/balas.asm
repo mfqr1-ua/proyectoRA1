@@ -1,237 +1,206 @@
 SECTION "Balas Code", ROM0
 
-; ========= velocidad (frames entre pasos) =========
-DEF SPEED_BALAS EQU 1000
+DEF SPEED_BALAS EQU 1000        ; velocidad 
+DEF TILE_BALA   EQU $01         
 
-; --------- crear bala desde el player ----------
-crear_bala_entidad_desde_player:
-    ; si estamos en 40, volver a 4 (slot 1) ---
-    ld   a, [next_free_entity]
-    cp   40
-    jr   nz, .ptr_ok
-    ld   a, 4
-    ld  [next_free_entity], a
-.ptr_ok:
+crear_bala_desde_jugador:       
+    ld   a, [next_free_entity]  
+    cp   40                     ;  comprueba si llegó al final 
+    jr   nz, .puntero_ok        ; si no llegó, salto a puntero_ok
+    ld   a, 4                   ;  vuelve al primer slot de bala 
+    ld  [next_free_entity], a   ;  guarda el nuevo puntero envuelto
+.puntero_ok:
 
-    ; pos del player (slot 0)
-    ld   a, [$C000]                ; x
-    ld   e, a
-    ld   a, [$C001]                ; y
-    ld   d, a
+    ld   a, [$C000]             ;  carga x 
+    ld   e, a                   ;  pone x en E
+    ld   a, [$C001]             ;  carga y 
+    ld   d, a                   ;  pone y en D
 
-    ; spawn justo encima: y = max(y-1, 0)
-    dec  d
-    bit  7, d
-    jr   z, .yok
-    ld   d, 0
-.yok:
+    inc  e                      ; centra la bala en el tile centro
 
-    ; reservar slot para bala
-    call man_entity_alloc          ; HL -> slot nuevo (x,y,tile,attrs)
+    dec  d                      ;  sube la bala 1 celda (y-1)
+    bit  7, d                   ;  comprueba si bajó de 0 (FF)
+    jr   z, .y_valida           ;  si no bajó, salto a y_valida
+    ld   d, 0                  
+.y_valida:
 
-    ; escribir bala en el slot
-    ld   a, e
-    ld  [hl+], a                   ; x
-    ld   a, d
-    ld  [hl+], a                   ; y
-    ld   a, $19
-    ld  [hl+], a                   ; tile
-    xor  a
-    ld  [hl], a                    ; attrs=0
+    call man_entity_alloc       ;  reserva un slot para la bala 
 
-    ; pintar bala en BG
-    push de
-    call calcular_hl_bg_desde_de
+    ld   a, e                  
+    ld  [hl+], a
+    ld   a, d                  
+    ld  [hl+], a
+    ld   a, TILE_BALA           
+    ld  [hl+], a
+    xor  a                     
+    ld  [hl], a
+
+    push de                     ; pinta la bala en el BG en (x,y)
+    call calcular_direccion_bg_desde_xy
     call wait_vblank
-    ld   a, $19
+    ld   a, TILE_BALA
     ld  [hl], a
     pop  de
     ret
 
-
-; Recorre 4..B. Si hay balas activas en la cola B..40, procesa también ese tramo.
-mover_balas:
-    ld   a, [next_free_entity]
+mover_balas:                    
+    ld   a, [next_free_entity]  ; comprueba si solo está el jugador 
     cp   4
-    ret  c
+    ret  c                      ; si no hay balas, sale
 
-    ld   a, [balas_tick]
+    ld   a, [balas_tick]        ;  acumula ticks para la velocidad
     inc  a
     ld  [balas_tick], a
     cp   SPEED_BALAS
-    ret  c
+    ret  c                      ; si no llegó al umbral, sale
     xor  a
-    ld  [balas_tick], a
+    ld  [balas_tick], a         ;  resetea el tick
 
-    ; snapshot del límite (para no cambiar si se crean balas este frame)
-    ld   a, [next_free_entity]
-    ld   b, a                      ; B = end_off (en bytes desde $C000)
-    ; FIX puntual: si justo ha hecho wrap a 4, este frame procesamos 4..40
+    ld   a, [next_free_entity]  
+    ld   b, a                   ; B = límite
     cp   4
-    jr   nz, .b_ok
-    ld   b, 40
-.b_ok:
+    jr   nz, .limite_ok         ; si no acaba de envolver, sigue
+    ld   b, 40                  ; si acaba de envolver, procesa 4..40 este frame
+.limite_ok:
 
-    ; ---------- PRIMER TRAMO: 4 .. B ----------
-    ld   c, 4
-.loop_slots_1:
+    ld   c, 4                   ; inicia en el primer slot de bala (offset 4)
+.primer_tramo_loop:
     ld   a, c
     cp   b
-    jr   z, .after_first
+    jr   z, .tras_primer_tramo  ; si llegó al límite, pasa al siguiente tramo
 
-    ; HL = $C000 + C
-    ld   h, $C0
+    ld   h, $C0                 ; HL = $C000 + C
     ld   l, c
 
-    ; leer x, y
-    ld   a, [hl]                   ; x
+    ld   a, [hl]                ;  lee x
     ld   e, a
     inc  hl
-    ld   a, [hl]                   ; y
+    ld   a, [hl]                ;  lee y
     ld   d, a
 
-    ; borrar tile viejo en (D,E)
     push bc
-    push hl                        ; HL -> Y del slot
+    push hl
     push de
-    call calcular_hl_bg_desde_de
+    call calcular_direccion_bg_desde_xy
     call wait_vblank
     xor  a
-    ld   [hl], a                   ; limpia BG en la posición anterior
+    ld   [hl], a                ;  borra el tile anterior en BG
     pop  de
-    pop  hl                        ; HL -> Y del slot
+    pop  hl
 
-    ; ¿tope superior?
     ld   a, d
     or   a
-    jr   nz, .no_top_row_1
-
-    ; y==0: vaciar slot
-    dec  hl                        ; HL -> X
+    jr   nz, .no_en_borde_1     ; si y>0, sigue
+    dec  hl                     ; HL vuelve a X del slot
     xor  a
-    ld  [hl+], a                   ; X = 0
-    ld  [hl+], a                   ; Y = 0
-    ld  [hl+], a                   ; TILE = 0
-    ld  [hl],  a                   ; ATTR = 0
-
+    ld  [hl+], a                ; X = 0
+    ld  [hl+], a                ; Y = 0
+    ld  [hl+], a                ; TILE = 0
+    ld  [hl],  a                ; ATTR = 0
     pop  bc
-    jr   .next_slot_1
+    jr   .avanzar_slot_1        ;  pasa al siguiente slot
 
-.no_top_row_1:
-    ; y > 0: y = y-1 y redibujar
+.no_en_borde_1:
     dec  a
     ld   d, a
-    ld  [hl], d
+    ld  [hl], d                 ;  guarda y-1 en el slot
 
     push de
-    call calcular_hl_bg_desde_de
+    call calcular_direccion_bg_desde_xy
     call wait_vblank
-    ld   a, $19
-    ld  [hl], a
+    ld   a, TILE_BALA
+    ld  [hl], a                 ;  pinta la bala en la nueva celda
     pop  de
 
     pop  bc
 
-.next_slot_1:
+.avanzar_slot_1:
     ld   a, c
     add  a, 4
     ld   c, a
-    jr   .loop_slots_1
+    jr   .primer_tramo_loop
 
-.after_first:
-    ; ---------- DETECCIÓN DE COLA (B .. 40) ----------
-    ; Si hay alguna bala activa en [B..40), procesamos ese tramo.
+.tras_primer_tramo:
     ld   a, b
     cp   40
-    ret  z                         ; si B==40, no hay cola
+    ret  z                      ; si B == 40 no hay cola que procesar
 
-    ; scan rápido: ¿existe tile != 0 en B..40?
-    ld   c, b
-.scan_tail:
+    ld   c, b                   ; esto empieza el escaneo de la cola [B..40)
+.escanear_cola:
     ld   a, c
     cp   40
-    jr   z, .no_tail               ; no hay nada en la cola
+    jr   z, .no_hay_cola        ; si llegó al final, no hay cola
 
-    ; HL = $C000 + C
-    ld   h, $C0
+    ld   h, $C0                 ; HL = $C000 + C
     ld   l, c
-    inc  hl                        ; -> Y
-    inc  hl                        ; -> TILE
-    ld   a, [hl]                   ; A = tile
+    inc  hl
+    inc  hl
+    ld   a, [hl]                ;  lee TILE del slot
     or   a
-    jr   nz, .do_tail              ; hay una bala activa en la cola
+    jr   nz, .procesar_cola     ; si hay tile != 0, hay cola activa
 
-    ; siguiente slot
     ld   a, c
     add  a, 4
     ld   c, a
-    jr   .scan_tail
+    jr   .escanear_cola
 
-.no_tail:
+.no_hay_cola:
     ret
 
-.do_tail:
-    ; SEGUNDO TRAMO: B .. 40 
-    ld   c, b
-.loop_slots_2:
+.procesar_cola:
+    ld   c, b                   ;  procesa desde B hasta 40
+.segundo_tramo_loop:
     ld   a, c
     cp   40
     ret  z
 
-    ; HL = $C000 + C
-    ld   h, $C0
+    ld   h, $C0                 ; HL = $C000 + C
     ld   l, c
 
-    ; leer x, y
-    ld   a, [hl]                   ; x
+    ld   a, [hl]                
     ld   e, a
     inc  hl
-    ld   a, [hl]                   ; y
+    ld   a, [hl]               
     ld   d, a
 
-    ; borrar tile viejo en (D,E)
     push bc
-    push hl                        ; HL -> Y del slot
+    push hl
     push de
-    call calcular_hl_bg_desde_de
+    call calcular_direccion_bg_desde_xy
     call wait_vblank
     xor  a
-    ld   [hl], a
+    ld   [hl], a                ;  borra el tile anterior en BG
     pop  de
     pop  hl
 
-    ; ¿tope superior?
     ld   a, d
     or   a
-    jr   nz, .no_top_row_2
-
-    ; y==0: vaciar slot
+    jr   nz, .no_en_borde_2     ; si y>0, sigue
     dec  hl
     xor  a
     ld  [hl+], a
     ld  [hl+], a
     ld  [hl+], a
     ld  [hl],  a
-
     pop  bc
-    jr   .next_slot_2
+    jr   .avanzar_slot_2
 
-.no_top_row_2:
+.no_en_borde_2:
     dec  a
     ld   d, a
-    ld  [hl], d
+    ld  [hl], d                 ;  guarda y-1 en el slot
 
     push de
-    call calcular_hl_bg_desde_de
+    call calcular_direccion_bg_desde_xy
     call wait_vblank
-    ld   a, $19
-    ld  [hl], a
+    ld   a, TILE_BALA
+    ld  [hl], a                 ;  pinta la bala en la nueva celda
     pop  de
 
     pop  bc
 
-.next_slot_2:
+.avanzar_slot_2:
     ld   a, c
     add  a, 4
     ld   c, a
-    jr   .loop_slots_2
+    jr   .segundo_tramo_loop

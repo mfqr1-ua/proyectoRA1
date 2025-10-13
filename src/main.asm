@@ -1,54 +1,89 @@
 INCLUDE "constantes.inc"
 
 SECTION "Variables", WRAM0
- disparo_cd: ds 1          ; contador de cooldown (tiempo entre disparos)
- balas_tick: ds 1          ; contador de frames para mover balas
- a_lock:     ds 1          ; 0 = listo (no pulsado), 1 = ya disparó y espera soltar A
+disparo_cd: ds 1           ;   cooldown entre disparos
+balas_tick: ds 1           ;  acumula ticks para mover balas
+a_lock:     ds 1           ;  evita disparos repetidos 
 
-DEF COOLDOWN_DISPARO EQU 15   ; frames de espera antes de poder disparar otra vez
+DEF COOLDOWN_DISPARO EQU 40 ;  frames de cooldown
+
+SECTION "Tiles ROM", ROM0
+naveEspacial::
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $E7,$E7,$DB,$DB,$BD,$BD,$7E,$7E
+    db $66,$66,$5A,$5A,$5A,$5A,$66,$66
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $FF,$FF,$FE,$FE,$FC,$FC,$FC,$FC
+    db $FC,$FC,$FD,$FD,$FF,$FF,$FF,$FF
+    db $7E,$7E,$7E,$7E,$00,$00,$24,$24
+    db $A5,$A5,$DB,$DB,$DB,$DB,$E7,$E7
+    db $FF,$FF,$7F,$7F,$3F,$3F,$3F,$3F
+    db $3F,$3F,$BF,$BF,$FF,$FF,$FF,$FF
+
+tileNegro::
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
+bala::
+    db $E7,$E7,$E7,$E7,$E7,$E7,$E7,$E7
+    db $E7,$E7,$E7,$E7,$E7,$E7,$E7,$E7
 
 SECTION "Main Code", ROM0
-
 main:
-    ; --- Inicialización básica ---
-    call borrarLogo
-    call man_entity_init
-    call ecs_init_player
-    call dibujaJugador
+    call wait_vblank                
+    call lcd_off                     
+
+    ld   a, $E4
+    ld  [$FF47], a                  ; paleta BG
+
+    ld   hl, naveEspacial
+    ld   de, $8000 + 16*$20
+    ld   b,  96
+    call copy_tiles                  ;  copia 6 tiles  $20 a $25
+
+    ld   hl, tileNegro
+    ld   de, $8000
+    ld   b,  16
+    call copy_tiles                  ;  tile 0 negro
+
+    ld   hl, bala
+    ld   de, $8000 + 16*1
+    ld   b,  16
+    call copy_tiles                  ;  copia el tile de la bala en  1
+
+    call borrar_logo                  
+
+    call lcd_on                      
+
+    call man_entity_init             
+    call ecs_init_player             ;  crea al jugador 
+
+    call dibujaJugador               ;  dibuja al jugador
+
     xor  a
-    ld  [disparo_cd], a
-    ld  [balas_tick], a
-    ld  [a_lock], a
-    call wait_vblank
+    ld  [disparo_cd], a              ;  limpia cooldown
+    ld  [balas_tick], a              ;  limpia tick balas
+    ld  [a_lock], a                  ;  limpia el lock del botón
 
-; ===================== BUCLE PRINCIPAL =====================
 .bucle_principal:
+    call mover_jugador   
+    call mover_balas                 
 
-    ; -------- 1) Mover al jugador con DPAD --------
-    call mover_jugador_con_entidad
+    call leer_botones                ;   A/B/Start/Select
+    bit  0, a                        ;   activo a 0
+    jr   nz, .A_no_pulsado
 
-    ; -------- 2) Mover balas cada N frames --------
-    call mover_balas
-
-    ; -------- 3) Disparo con A: UNA bala por pulsación (flanco) --------
-    call leer_botones
-    bit  0, a                    ; bit0 = A (activo a 0)
-    jr   nz, .A_no_pulsado       ; si no está pulsado, liberamos lock
-
-    ; A pulsado (bit=0)
-    ld   a, [a_lock]
+    ld   a, [a_lock]                 ;  evita auto-repetición
     or   a
-    jr   nz, .no_disparo         ; si ya está bloqueado, no crear otra
+    jr   nz, .no_disparo
 
-    ; si hay cooldown, no disparamos pero bloqueamos hasta soltar
-    ld   a, [disparo_cd]
+    ld   a, [disparo_cd]             ;  aplica cooldown
     or   a
     jr   nz, .bloquear
 
-    ; puede disparar -> crear bala
-    call crear_bala_entidad_desde_player
-
-    ; reiniciar cooldown
+    call crear_bala_desde_jugador ;  crea una bala
     ld   a, COOLDOWN_DISPARO
     ld  [disparo_cd], a
 
@@ -59,21 +94,18 @@ main:
 
 .A_no_pulsado:
     xor  a
-    ld  [a_lock], a              ; liberar: próxima pulsación creará 1 bala
+    ld  [a_lock], a                  ;  libera el lock al soltar A
 
 .no_disparo:
-    ; -------- 4) Decrementar cooldown si está activo --------
-    ld   a, [disparo_cd]
+    ld   a, [disparo_cd]             ;  decrementa cooldown
     or   a
     jr   z, .continuar
     dec  a
     ld  [disparo_cd], a
 
 .continuar:
-    ; -------- 5) Repetir el bucle principal --------
     jr .bucle_principal
 
-; -------- nunca se debe llegar aquí --------
     di
     halt
     ret
