@@ -1,3 +1,9 @@
+;; Constantes del sistema
+DEF SPR_X_OFF    = 0
+DEF SPR_Y_OFF    = 1
+DEF SPR_TILE_OFF = 2
+DEF SPR_ATT_OFF  = 3
+
 ;; Constantes del jugador
 PLAYER_CHAR         EQU $19     ; Carácter del jugador
 PLAYER_START_Y      EQU 16      ; Fila donde está el jugador
