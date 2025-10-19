@@ -1,6 +1,6 @@
 INCLUDE "constantes.inc"
 
-SECTION "funcionesMovimiento", ROM0
+SECTION "movimiento", ROM0
 
 calcular_direccion_bg_desde_xy:
     push de                 ;  guarda (y,x)
@@ -44,6 +44,7 @@ mover_jugador:
     bit  0, a               
     jr   nz, .comprobar_izquierda ; si no pulsa derecha, salta a izquierda
 
+    ; MOVER DERECHA
     call leer_slot0_xy      ; pone E=x, D=y del jugador
 
     push de
@@ -52,9 +53,9 @@ mover_jugador:
 
     inc  e                  
     ld   a, e
-    cp   30                 
-    jr   c, .x_der_ok       ;si x<30, salta a x_der_ok
-    ld   e, 29              ; satura a 29 (3 tiles de ancho)
+    cp   MAX_X_POS-1        ; Límite derecho (19-2=17 para nave de 3 tiles)  
+    jr   c, .x_der_ok       ; si x<17, salta a x_der_ok
+    ld   e, MAX_X_POS-2     ; satura a 17 (para nave de 3 tiles de ancho)
 .x_der_ok:
     call escribir_slot0_x  
 
@@ -62,17 +63,13 @@ mover_jugador:
     ld   a, [$C002]         ;  carga el tile base (TL) del bloque
     call pintar_bloque_3x2_desde_xy_con_base ;  pinta el bloque 3x2 en la nueva posición
     pop  de
-
-.esperar_soltar_derecha:
-    call read_dpad          ; espera a soltar derecha
-    bit  0, a
-    jr   z, .esperar_soltar_derecha
     ret
 
 .comprobar_izquierda:
     bit  1, a               ; comprueba izquierda (activo a 0)
     ret  nz                 ; si no pulsa izquierda, sale
 
+    ; MOVER IZQUIERDA
     call leer_slot0_xy      ; pone E=x, D=y del jugador
 
     push de
@@ -89,9 +86,4 @@ mover_jugador:
     ld   a, [$C002]         ;
     call pintar_bloque_3x2_desde_xy_con_base ; pinta el bloque 3x2 en la nueva posición
     pop  de
-
-.esperar_soltar_izquierda:
-    call read_dpad          ; espera a soltar izquierda
-    bit  1, a
-    jr   z, .esperar_soltar_izquierda
     ret

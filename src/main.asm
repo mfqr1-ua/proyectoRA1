@@ -5,7 +5,7 @@ disparo_cd: ds 1           ;   cooldown entre disparos
 balas_tick: ds 1           ;  acumula ticks para mover balas
 a_lock:     ds 1           ;  evita disparos repetidos 
 
-DEF COOLDOWN_DISPARO EQU 40 ;  frames de cooldown
+DEF COOLDOWN_DISPARO EQU 15 ;  frames de cooldown (más rápido)
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
@@ -59,7 +59,7 @@ main:
 
     call man_entity_init             
     call ecs_init_player             ;  crea al jugador 
-    call init_enemy_system          ; Inicializar sistema de enemigos
+    call init_enemigos               ;  inicializa sistema de enemigos
 
     call dibujaJugador               ;  dibuja al jugador
 
@@ -73,38 +73,29 @@ main:
     call mover_balas                 
 
     ; Sistema de enemigos
-    call update_spawn_timer_simple   ; Crear nuevos enemigos cuando se mueran
-    call clear_enemies_simple        ; Borrar enemigos de pantalla
-    call update_enemies_simple       ; Mover enemigos hacia abajo
-    call draw_enemies_simple         ; Dibujar enemigos en pantalla
+    call update_enemigos             ; Actualizar y crear enemigos
+    call draw_enemigos               ; Dibujar enemigos en pantalla
 
     call leer_botones                ;   A/B/Start/Select
-    bit  0, a                        ;   activo a 0
-    jr   nz, .A_no_pulsado
+    bit  1, a                        ;   bit 1 = botón B (1=presionado)
+    jr   z, .B_no_pulsado           ;   si bit=0, B no está presionado
 
-    ld   a, [a_lock]                 ;  evita auto-repetición
+    ; B está presionado -> disparar
+    ld   a, [disparo_cd]             ;  verificar cooldown
     or   a
-    jr   nz, .no_disparo
+    jr   nz, .no_disparo             ;  si cooldown > 0, no disparar
 
-    ld   a, [disparo_cd]             ;  aplica cooldown
-    or   a
-    jr   nz, .bloquear
-
-    call crear_bala_desde_jugador ;  crea una bala
-    ld   a, COOLDOWN_DISPARO
+    call crear_bala_desde_jugador    ;  crear bala
+    ld   a, COOLDOWN_DISPARO         ;  establecer cooldown
     ld  [disparo_cd], a
-
-.bloquear:
-    ld   a, 1
-    ld  [a_lock], a
     jr   .no_disparo
 
-.A_no_pulsado:
-    xor  a
-    ld  [a_lock], a                  ;  libera el lock al soltar A
+.B_no_pulsado:
+    ; B no está presionado
 
 .no_disparo:
-    ld   a, [disparo_cd]             ;  decrementa cooldown
+    ; Decrementar cooldown
+    ld   a, [disparo_cd]             
     or   a
     jr   z, .continuar
     dec  a

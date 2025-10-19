@@ -39,11 +39,12 @@ read_dpad:
     ret
 
 leer_botones:                     ; A/B/Start/Select
-    ld   a, $10                  
-    ld  [$FF00], a
-    ld   a, [$FF00]               
-    ld   a, [$FF00]               
-    ld   a, [$FF00]               
+    ld   a, $10                   ; Seleccionar botones A/B/Start/Select
+    ld  [$FF00], a                ; Escribir al registro de control
+    ld   a, [$FF00]               ; Leer los botones
+    ld   a, [$FF00]               ; Leer otra vez (estabilizar)
+    cpl                           ; Invertir bits (0=presionado, 1=no presionado -> 1=presionado, 0=no presionado)
+    and  $0F                      ; Mantener solo los 4 bits inferiores (A,B,Select,Start)
     ret
 
 memset_256:
@@ -147,21 +148,4 @@ dibujaJugador:
 ;; ======================================================================
 ;; Funciones adicionales para compatibilidad con el sistema de enemigos
 ;; ======================================================================
-
-calcular_direccion_bg_desde_xy:
-    ; Convierte coordenadas (d,e) = (Y,X) a dirección de memoria HL
-    ld   h, 0
-    ld   l, d                      ; HL = Y
-    add  hl, hl                    ; *2
-    add  hl, hl                    ; *4
-    add  hl, hl                    ; *8
-    add  hl, hl                    ; *16
-    add  hl, hl                    ; *32 (Y * 32)
-    
-    ld   bc, $9800                 ; Base de la pantalla
-    add  hl, bc
-    
-    ld   b, 0
-    ld   c, e                      ; BC = X
-    add  hl, bc                    ; HL = $9800 + (Y * 32) + X
-    ret
+;; NOTA: La función calcular_direccion_bg_desde_xy está definida en funcionesMovimiento.asm
