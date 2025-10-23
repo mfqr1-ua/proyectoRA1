@@ -1,5 +1,5 @@
 SECTION "EM Data", WRAM0[$C000]
-component_sprite:      ds 40     ;  reserva 40 bytes para 10 entidades (x,y,tile,attrs)
+component_sprite:      ds 80     ;  reserva 40 bytes para 10 entidades (x,y,tile,attrs)
 num_entities_alive:    ds 1      ;  guarda cuántas entidades hay vivas
 next_free_entity:      ds 1      ;  guarda el offset del siguiente slot libre 
 
@@ -7,7 +7,7 @@ SECTION "EM Code", ROM0
 
 man_entity_init:
     ld   hl, component_sprite    
-    ld   b,  40                  
+    ld   b,  80                  
     xor  a                       
     call memset_256              ;  limpia los 40 bytes de la tabla
     xor  a                       

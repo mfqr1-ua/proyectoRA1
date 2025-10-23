@@ -3,7 +3,9 @@ INCLUDE "constantes.inc"
 SECTION "Variables", WRAM0
 disparo_cd: ds 1           ;   cooldown entre disparos
 balas_tick: ds 1           ;  acumula ticks para mover balas
-a_lock:     ds 1           ;  evita disparos repetidos 
+a_lock:     ds 1     
+
+      ;  evita disparos repetidos 
 
 DEF COOLDOWN_DISPARO EQU 40 ;  frames de cooldown
 
@@ -30,6 +32,20 @@ bala::
     db $E7,$E7,$E7,$E7,$E7,$E7,$E7,$E7
     db $E7,$E7,$E7,$E7,$E7,$E7,$E7,$E7
 
+
+enemigo::
+    DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    DB $FC,$FC,$FD,$FD,$FD,$FD,$FD,$FD
+    DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    DB $E0,$E0,$C0,$C0,$80,$80,$19,$19
+    DB $19,$19,$00,$00,$00,$00,$80,$80
+    DB $DF,$DF,$DF,$DF,$DF,$DF,$FF,$FF
+    DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    DB $7F,$7F,$3F,$3F,$1F,$1F,$8F,$8F
+    DB $83,$83,$0B,$0B,$0B,$0B,$1B,$1B
+    DB $BF,$BF,$BF,$BF,$BF,$BF,$FF,$FF
 SECTION "Main Code", ROM0
 main:
     call wait_vblank                
@@ -51,14 +67,20 @@ main:
     ld   hl, bala
     ld   de, $8000 + 16*1
     ld   b,  16
-    call copy_tiles                  ;  copia el tile de la bala en  1
+    call copy_tiles   ;  copia el tile de la bala en  1
+    
+    ld   hl, enemigo
+    ld   de, $8000 + 16*26
+    ld   b,  96
+    call copy_tiles                 
 
     call borrar_logo                  
 
     call lcd_on                      
 
     call man_entity_init             
-    call ecs_init_player             ;  crea al jugador 
+    call ecs_init_player 
+    call ecs_init_enemies             ;  crea al jugador 
 
     call dibujaJugador               ;  dibuja al jugador
 
@@ -69,7 +91,9 @@ main:
 
 .bucle_principal:
     call mover_jugador   
-    call mover_balas                 
+    call mover_balas    
+    ;call ecs_update_enemies     ; <<--- añadir esto
+             
 
     call leer_botones                ;   A/B/Start/Select
     bit  0, a                        ;   activo a 0
