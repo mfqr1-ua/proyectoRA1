@@ -62,6 +62,11 @@ main:
 
     call dibujaJugador               ;  dibuja al jugador
 
+    ld a, $FF       ; Activa todos los canales y el volumen máximo
+    ld [$FF26], a   ; NR52 - Control maestro de sonido (Power ON)
+    ld a, $77       ; Volumen máximo para ambos altavoces (izquierdo y derecho)
+    ld [$FF25], a   ; NR51 - Control de salida y volumen
+
     xor  a
     ld  [disparo_cd], a              ;  limpia cooldown
     ld  [balas_tick], a              ;  limpia tick balas

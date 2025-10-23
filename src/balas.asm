@@ -41,6 +41,14 @@ crear_bala_desde_jugador:
     ld   a, TILE_BALA
     ld  [hl], a
     pop  de
+    ld a, %01000000     ; Forma de onda: 25% Duty Cycle
+    ld [$FF16], a       ; NR21 - Control de longitud y forma de onda
+    ld a, %11110010     ; Volumen inicial 15, dirección decreciente, duración 2
+    ld [$FF17], a       ; NR22 - Control de envolvente de volumen
+    ld a, $C3           ; Frecuencia baja (ajusta para cambiar el tono)
+    ld [$FF18], a       ; NR23 - Frecuencia baja
+    ld a, %10000110     ; Iniciar sonido (Bit 7=1), sin control de duración (Bit 6=0), Frecuencia alta (Bits 2-0 = %110)
+    ld [$FF19], a       ; NR24 - Control y bits altos de frecuencia
     ret
 
 mover_balas:                    
