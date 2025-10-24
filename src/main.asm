@@ -82,7 +82,14 @@ main:
     call ecs_init_player 
     call ecs_init_enemies             ;  crea al jugador 
 
-    call dibujaJugador               ;  dibuja al jugador
+    call dibujaJugador  
+
+    ;sonido ilyas
+    
+    ld a, $FF       ; Activa todos los canales y el volumen máximo
+    ld [$FF26], a   ; NR52 - Control maestro de sonido (Power ON)
+    ld a, $77       ; Volumen máximo para ambos altavoces (izquierdo y derecho)
+    ld [$FF25], a             ;  dibuja al jugador
 
     xor  a
     ld  [disparo_cd], a              ;  limpia cooldown

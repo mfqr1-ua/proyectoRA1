@@ -1,25 +1,25 @@
 SUMMARY:
-	ROM0: 1115 bytes used / 15269 free
+	ROM0: 1145 bytes used / 15239 free
 	WRAM0: 91 bytes used / 4005 free
 
 ROM0 bank #0:
-	SECTION: $0000-$00e4 ($00e5 bytes) ["Balas Code"]
+	SECTION: $0000-$00f8 ($00f9 bytes) ["Balas Code"]
 	         $0000 = crear_bala_desde_jugador
 	         $000c = crear_bala_desde_jugador.puntero_ok
 	         $001c = crear_bala_desde_jugador.y_valida
-	         $0034 = mover_balas
-	         $0052 = mover_balas.limite_ok
-	         $0054 = mover_balas.primer_tramo_loop
-	         $007a = mover_balas.no_en_borde_1
-	         $0089 = mover_balas.avanzar_slot_1
-	         $008f = mover_balas.tras_primer_tramo
-	         $0094 = mover_balas.escanear_cola
-	         $00a8 = mover_balas.no_hay_cola
-	         $00a9 = mover_balas.procesar_cola
-	         $00aa = mover_balas.segundo_tramo_loop
-	         $00d0 = mover_balas.no_en_borde_2
-	         $00df = mover_balas.avanzar_slot_2
-	EMPTY: $00e5-$00ff ($001b bytes)
+	         $0048 = mover_balas
+	         $0066 = mover_balas.limite_ok
+	         $0068 = mover_balas.primer_tramo_loop
+	         $008e = mover_balas.no_en_borde_1
+	         $009d = mover_balas.avanzar_slot_1
+	         $00a3 = mover_balas.tras_primer_tramo
+	         $00a8 = mover_balas.escanear_cola
+	         $00bc = mover_balas.no_hay_cola
+	         $00bd = mover_balas.procesar_cola
+	         $00be = mover_balas.segundo_tramo_loop
+	         $00e4 = mover_balas.no_en_borde_2
+	         $00f3 = mover_balas.avanzar_slot_2
+	EMPTY: $00f9-$00ff ($0007 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Header"]
 	SECTION: $0150-$022f ($00e0 bytes) ["Tiles ROM"]
 	         $0150 = naveEspacial
@@ -41,34 +41,34 @@ ROM0 bank #0:
 	         $0297 = pintar_bloque_3x2_desde_xy_con_base
 	         $02b5 = borrar_bloque_3x2_desde_xy
 	         $02cd = dibujaJugador
-	SECTION: $02db-$0368 ($008e bytes) ["Main Code"]
+	SECTION: $02db-$0372 ($0098 bytes) ["Main Code"]
 	         $02db = main
-	         $032e = main.bucle_principal
-	         $034f = main.bloquear
-	         $0356 = main.A_no_pulsado
-	         $035a = main.no_disparo
-	         $0364 = main.continuar
-	SECTION: $0369-$03da ($0072 bytes) ["funcionesMovimiento"]
-	         $0369 = calcular_direccion_bg_desde_xy
-	         $0372 = calcular_direccion_bg_desde_xy.loop_filas
-	         $0379 = calcular_direccion_bg_desde_xy.filas_ok
-	         $0380 = leer_slot0_xy
-	         $0387 = escribir_slot0_x
-	         $038c = mover_jugador
-	         $03a3 = mover_jugador.x_der_ok
-	         $03ae = mover_jugador.esperar_soltar_derecha
-	         $03b6 = mover_jugador.comprobar_izquierda
-	         $03c8 = mover_jugador.x_izq_ok
-	         $03d3 = mover_jugador.esperar_soltar_izquierda
-	SECTION: $03db-$0442 ($0068 bytes) ["Enemies Code"]
-	         $03db = pintar_enemigo_3x2
-	         $0403 = ecs_init_enemies
-	SECTION: $0443-$0475 ($0033 bytes) ["EM Code"]
-	         $0443 = man_entity_init
-	         $0454 = man_entity_alloc
-	         $0467 = ecs_init_player
-	EMPTY: $0476-$3fff ($3b8a bytes)
-	TOTAL EMPTY: $3ba5 bytes
+	         $0338 = main.bucle_principal
+	         $0359 = main.bloquear
+	         $0360 = main.A_no_pulsado
+	         $0364 = main.no_disparo
+	         $036e = main.continuar
+	SECTION: $0373-$03e4 ($0072 bytes) ["funcionesMovimiento"]
+	         $0373 = calcular_direccion_bg_desde_xy
+	         $037c = calcular_direccion_bg_desde_xy.loop_filas
+	         $0383 = calcular_direccion_bg_desde_xy.filas_ok
+	         $038a = leer_slot0_xy
+	         $0391 = escribir_slot0_x
+	         $0396 = mover_jugador
+	         $03ad = mover_jugador.x_der_ok
+	         $03b8 = mover_jugador.esperar_soltar_derecha
+	         $03c0 = mover_jugador.comprobar_izquierda
+	         $03d2 = mover_jugador.x_izq_ok
+	         $03dd = mover_jugador.esperar_soltar_izquierda
+	SECTION: $03e5-$044c ($0068 bytes) ["Enemies Code"]
+	         $03e5 = pintar_enemigo_3x2
+	         $040d = ecs_init_enemies
+	SECTION: $044d-$047f ($0033 bytes) ["EM Code"]
+	         $044d = man_entity_init
+	         $045e = man_entity_alloc
+	         $0471 = ecs_init_player
+	EMPTY: $0480-$3fff ($3b80 bytes)
+	TOTAL EMPTY: $3b87 bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c051 ($0052 bytes) ["EM Data"]
