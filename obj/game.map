@@ -1,5 +1,5 @@
 SUMMARY:
-	ROM0: 1145 bytes used / 15239 free
+	ROM0: 1172 bytes used / 15212 free
 	WRAM0: 91 bytes used / 4005 free
 
 ROM0 bank #0:
@@ -21,54 +21,55 @@ ROM0 bank #0:
 	         $00f3 = mover_balas.avanzar_slot_2
 	EMPTY: $00f9-$00ff ($0007 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Header"]
-	SECTION: $0150-$022f ($00e0 bytes) ["Tiles ROM"]
+	SECTION: $0150-$023f ($00f0 bytes) ["Tiles ROM"]
 	         $0150 = naveEspacial
 	         $01b0 = tileNegro
 	         $01c0 = bala
 	         $01d0 = enemigo
-	SECTION: $0230-$02da ($00ab bytes) ["utils"]
-	         $0230 = borrar_logo
-	         $023d = limpiar_arriba
-	         $0247 = limpiar_abajo
-	         $024c = wait_vblank
-	         $0254 = read_dpad
-	         $0260 = leer_botones
-	         $026f = memset_256
-	         $0274 = memcpy_256
-	         $027b = lcd_off
-	         $0284 = lcd_on
-	         $028d = copy_tiles
-	         $0297 = pintar_bloque_3x2_desde_xy_con_base
-	         $02b5 = borrar_bloque_3x2_desde_xy
-	         $02cd = dibujaJugador
-	SECTION: $02db-$0372 ($0098 bytes) ["Main Code"]
-	         $02db = main
-	         $0338 = main.bucle_principal
-	         $0359 = main.bloquear
-	         $0360 = main.A_no_pulsado
-	         $0364 = main.no_disparo
-	         $036e = main.continuar
-	SECTION: $0373-$03e4 ($0072 bytes) ["funcionesMovimiento"]
-	         $0373 = calcular_direccion_bg_desde_xy
-	         $037c = calcular_direccion_bg_desde_xy.loop_filas
-	         $0383 = calcular_direccion_bg_desde_xy.filas_ok
-	         $038a = leer_slot0_xy
-	         $0391 = escribir_slot0_x
-	         $0396 = mover_jugador
-	         $03ad = mover_jugador.x_der_ok
-	         $03b8 = mover_jugador.esperar_soltar_derecha
-	         $03c0 = mover_jugador.comprobar_izquierda
-	         $03d2 = mover_jugador.x_izq_ok
-	         $03dd = mover_jugador.esperar_soltar_izquierda
-	SECTION: $03e5-$044c ($0068 bytes) ["Enemies Code"]
-	         $03e5 = pintar_enemigo_3x2
-	         $040d = ecs_init_enemies
-	SECTION: $044d-$047f ($0033 bytes) ["EM Code"]
-	         $044d = man_entity_init
-	         $045e = man_entity_alloc
-	         $0471 = ecs_init_player
-	EMPTY: $0480-$3fff ($3b80 bytes)
-	TOTAL EMPTY: $3b87 bytes
+	         $0230 = estrella
+	SECTION: $0240-$02ea ($00ab bytes) ["utils"]
+	         $0240 = borrar_logo
+	         $024d = limpiar_arriba
+	         $0257 = limpiar_abajo
+	         $025c = wait_vblank
+	         $0264 = read_dpad
+	         $0270 = leer_botones
+	         $027f = memset_256
+	         $0284 = memcpy_256
+	         $028b = lcd_off
+	         $0294 = lcd_on
+	         $029d = copy_tiles
+	         $02a7 = pintar_bloque_3x2_desde_xy_con_base
+	         $02c5 = borrar_bloque_3x2_desde_xy
+	         $02dd = dibujaJugador
+	SECTION: $02eb-$038d ($00a3 bytes) ["Main Code"]
+	         $02eb = main
+	         $0353 = main.bucle_principal
+	         $0374 = main.bloquear
+	         $037b = main.A_no_pulsado
+	         $037f = main.no_disparo
+	         $0389 = main.continuar
+	SECTION: $038e-$03ff ($0072 bytes) ["funcionesMovimiento"]
+	         $038e = calcular_direccion_bg_desde_xy
+	         $0397 = calcular_direccion_bg_desde_xy.loop_filas
+	         $039e = calcular_direccion_bg_desde_xy.filas_ok
+	         $03a5 = leer_slot0_xy
+	         $03ac = escribir_slot0_x
+	         $03b1 = mover_jugador
+	         $03c8 = mover_jugador.x_der_ok
+	         $03d3 = mover_jugador.esperar_soltar_derecha
+	         $03db = mover_jugador.comprobar_izquierda
+	         $03ed = mover_jugador.x_izq_ok
+	         $03f8 = mover_jugador.esperar_soltar_izquierda
+	SECTION: $0400-$0467 ($0068 bytes) ["Enemies Code"]
+	         $0400 = pintar_enemigo_3x2
+	         $0428 = ecs_init_enemies
+	SECTION: $0468-$049a ($0033 bytes) ["EM Code"]
+	         $0468 = man_entity_init
+	         $0479 = man_entity_alloc
+	         $048c = ecs_init_player
+	EMPTY: $049b-$3fff ($3b65 bytes)
+	TOTAL EMPTY: $3b6c bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c051 ($0052 bytes) ["EM Data"]

@@ -46,6 +46,10 @@ enemigo::
     DB $7F,$7F,$3F,$3F,$1F,$1F,$8F,$8F
     DB $83,$83,$0B,$0B,$0B,$0B,$1B,$1B
     DB $BF,$BF,$BF,$BF,$BF,$BF,$FF,$FF
+
+estrella::
+    DB $FF,$FF,$BD,$BD,$DB,$DB,$E7,$E7
+    DB $E7,$E7,$DB,$DB,$BD,$BD,$FF,$FF
 SECTION "Main Code", ROM0
 main:
     call wait_vblank                
@@ -72,7 +76,13 @@ main:
     ld   hl, enemigo
     ld   de, $8000 + 16*26
     ld   b,  96
-    call copy_tiles                 
+    call copy_tiles
+
+    ld   hl, estrella
+    ld   de, $8000 + 16*40
+    ld   b,  16
+    call copy_tiles     
+             
 
     call borrar_logo                  
 
@@ -85,7 +95,7 @@ main:
     call dibujaJugador  
 
     ;sonido ilyas
-    
+
     ld a, $FF       ; Activa todos los canales y el volumen máximo
     ld [$FF26], a   ; NR52 - Control maestro de sonido (Power ON)
     ld a, $77       ; Volumen máximo para ambos altavoces (izquierdo y derecho)
