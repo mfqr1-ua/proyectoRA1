@@ -52,9 +52,9 @@ mover_jugador:
 
     inc  e                  
     ld   a, e
-    cp   30                 
-    jr   c, .x_der_ok       ;si x<30, salta a x_der_ok
-    ld   e, 29              ; satura a 29 (3 tiles de ancho)
+    cp   17                 ; Compara X con 17 (límite derecho)
+    jr   c, .x_der_ok       ; Si X < 17, está bien moverse.
+    ld   e, 17              ; Si X >= 17, fíjalo en 17.
 .x_der_ok:
     call escribir_slot0_x  
 
