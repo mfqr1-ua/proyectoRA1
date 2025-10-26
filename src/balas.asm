@@ -53,8 +53,8 @@ crear_bala_desde_jugador:
     ld [$FF19], a  
     ret
 
-mover_balas:                    
-    ; Primero revisar colisiones antes de mover
+mover_balas:
+    ; Revisar colisiones (ahora con sistema simplificado)
     call revisar_colisiones_balas_enemigos
     
     ld   a, [next_free_entity]  ; comprueba si solo está el jugador 
