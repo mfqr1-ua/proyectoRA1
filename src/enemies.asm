@@ -20,10 +20,32 @@ DEF ATTR_ENEMIGO EQU $01
 ; ------------------------------------------------------------
 ; crear_enemigo_entidad: Crear enemigo como entidad en ECS
 ; E = x, D = y
+; Crea directamente en slots 80+ sin usar man_entity_alloc
 ; ------------------------------------------------------------
 crear_enemigo_entidad:
-    call man_entity_alloc
+    ; Buscar primer slot libre en rango 80-159
+    ld   c, 80
+.buscar_slot:
+    ld   a, c
+    cp   160
+    ret  z                      ; No hay slots libres
     
+    ld   h, $C0
+    ld   l, c
+    
+    ; Verificar si está vacío
+    ld   a, [hl]
+    or   a
+    jr   z, .slot_encontrado
+    
+    ; Siguiente slot
+    ld   a, c
+    add  a, 4
+    ld   c, a
+    jr   .buscar_slot
+    
+.slot_encontrado:
+    ; HL ya apunta al slot libre
     ld   a, e
     ld  [hl+], a                ; X
     ld   a, d
@@ -40,9 +62,9 @@ crear_enemigo_entidad:
 ; ------------------------------------------------------------
 ecs_init_enemies:
     ; Inicializar timers
-    ld   a, 15
+    ld   a, 30
     ld  [enemy_move_timer], a
-    ld   a, 180
+    ld   a, 240
     ld  [enemy_spawn_timer], a
 
     ; Enemigo 1 (izquierda)
@@ -72,7 +94,7 @@ ecs_update_enemies:
     ld  [enemy_move_timer], a
     jr   nz, .check_spawn
     
-    ld   a, 15                  ; Movimiento más rápido (similar a balas)
+    ld   a, 30                  ; Movimiento cada medio segundo
     ld  [enemy_move_timer], a
     call mover_enemigos
     
@@ -83,7 +105,7 @@ ecs_update_enemies:
     ld  [enemy_spawn_timer], a
     jr   nz, .end
     
-    ld   a, 180                 ; Spawn cada 3 segundos
+    ld   a, 240                 ; Spawn cada 4 segundos
     ld  [enemy_spawn_timer], a
     call spawn_enemigo_si_falta
     

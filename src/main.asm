@@ -7,7 +7,7 @@ a_lock:     ds 1
 
       ;  evita disparos repetidos 
 
-DEF COOLDOWN_DISPARO EQU 40 ;  frames de cooldown
+DEF COOLDOWN_DISPARO EQU 20 ;  frames de cooldown (ajustado para mejor jugabilidad)
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
@@ -90,6 +90,16 @@ main:
 
     call man_entity_init             
     call ecs_init_player 
+    
+    ; Limpiar slots de balas (4-79) para evitar balas fantasma
+    ld   hl, $C004
+    ld   b, 76                   ; 19 slots × 4 bytes = 76 bytes
+    xor  a
+.clear_balas:
+    ld   [hl+], a
+    dec  b
+    jr   nz, .clear_balas
+    
     call ecs_init_enemies            ;  crea los 3 enemigos como entidades
 
     call dibujaJugador
