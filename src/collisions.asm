@@ -158,7 +158,9 @@ check_collision_bala_vs_enemy_slot:
     ld   a, b
     sub  c
     jr   nc, .positive_x
-    neg
+    ; Si es negativo, negar manualmente: A = 0 - A
+    cpl
+    inc  a
 .positive_x:
     add  a, 2                    ; Margen de colisión X
     cp   5                       ; Ancho de detección (3x2 tiles)
@@ -172,7 +174,9 @@ check_collision_bala_vs_enemy_slot:
     
     sub  d
     jr   nc, .positive_y
-    neg
+    ; Si es negativo, negar manualmente: A = 0 - A
+    cpl
+    inc  a
 .positive_y:
     add  a, 5                    ; Margen de colisión Y
     cp   10                      ; Alto de detección
