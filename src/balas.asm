@@ -54,6 +54,9 @@ crear_bala_desde_jugador:
     ret
 
 mover_balas:                    
+    ; Primero revisar colisiones antes de mover
+    call revisar_colisiones_balas_enemigos
+    
     ld   a, [next_free_entity]  ; comprueba si solo está el jugador 
     cp   4
     ret  c                      ; si no hay balas, sale

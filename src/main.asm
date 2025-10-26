@@ -90,9 +90,10 @@ main:
 
     call man_entity_init             
     call ecs_init_player 
-    call ecs_init_enemies             ;  crea al jugador 
+    call ecs_init_enemies            ;  crea los 3 enemigos como entidades
 
-    call dibujaJugador  
+    call dibujaJugador
+    call draw_enemigos               ;  dibuja los enemigos iniciales  
 
     ;sonido ilyas
 
@@ -108,8 +109,9 @@ main:
 
 .bucle_principal:
     call mover_jugador   
-    call mover_balas    
-    ;call ecs_update_enemies     ; <<--- añadir esto
+    call mover_balas
+    call ecs_update_enemies          ; Actualizar lógica de enemigos
+    call draw_enemigos               ; Redibujar enemigos
              
 
     call leer_botones                ;   A/B/Start/Select
