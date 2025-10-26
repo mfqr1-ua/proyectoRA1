@@ -1,6 +1,6 @@
 SECTION "Balas Code", ROM0
 
-DEF SPEED_BALAS EQU 1000        ; velocidad 
+DEF SPEED_BALAS EQU 3           ; velocidad (más bajo = más rápido)
 DEF TILE_BALA   EQU $01         
 
 crear_bala_desde_jugador:       

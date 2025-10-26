@@ -70,11 +70,11 @@ revisar_colisiones_balas_enemigos:
 ; Revisa la bala actual contra todos los enemigos
 ; ------------------------------------------------------------
 check_bala_vs_enemigos:
-    ld   b, 4                    ; Primer slot de enemigos
+    ld   b, 80                   ; Slots de enemigos (80-160)
     
 .loop_enemigos:
     ld   a, b
-    cp   40
+    cp   160
     ret  z                       ; No más enemigos
     
     ; Guardar slot de enemigo

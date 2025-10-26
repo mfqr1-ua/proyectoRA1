@@ -40,9 +40,9 @@ crear_enemigo_entidad:
 ; ------------------------------------------------------------
 ecs_init_enemies:
     ; Inicializar timers
-    ld   a, 60
+    ld   a, 15
     ld  [enemy_move_timer], a
-    ld   a, 120
+    ld   a, 180
     ld  [enemy_spawn_timer], a
 
     ; Enemigo 1 (izquierda)
@@ -72,7 +72,7 @@ ecs_update_enemies:
     ld  [enemy_move_timer], a
     jr   nz, .check_spawn
     
-    ld   a, 60                  ; Movimiento cada segundo
+    ld   a, 15                  ; Movimiento más rápido (similar a balas)
     ld  [enemy_move_timer], a
     call mover_enemigos
     
@@ -83,7 +83,7 @@ ecs_update_enemies:
     ld  [enemy_spawn_timer], a
     jr   nz, .end
     
-    ld   a, 120                 ; Spawn cada 2 segundos
+    ld   a, 180                 ; Spawn cada 3 segundos
     ld  [enemy_spawn_timer], a
     call spawn_enemigo_si_falta
     
@@ -94,11 +94,11 @@ ecs_update_enemies:
 ; mover_enemigos: Mover todos los enemigos hacia abajo
 ; ------------------------------------------------------------
 mover_enemigos:
-    ld   c, 4                   ; Empezar después del jugador (slots 4+)
+    ld   c, 80                  ; Empezar en slots de enemigos (80+)
 .loop_slots:
     ld   a, c
-    cp   40
-    ret  z                      ; Llegó al final de los slots de enemigos
+    cp   160
+    ret  z                      ; Llegó al final de los slots
     
     ld   h, $C0
     ld   l, c
@@ -189,10 +189,10 @@ spawn_enemigo_si_falta:
 ; ------------------------------------------------------------
 contar_enemigos_vivos:
     ld   b, 0                   ; Contador
-    ld   c, 4
+    ld   c, 80                  ; Slots de enemigos
 .loop_slots:
     ld   a, c
-    cp   40
+    cp   160
     jr   z, .done
     
     ld   h, $C0
@@ -228,10 +228,10 @@ contar_enemigos_vivos:
 ; draw_enemigos: Dibujar todos los enemigos (sprite 3x2)
 ; ------------------------------------------------------------
 draw_enemigos:
-    ld   c, 4
+    ld   c, 80                  ; Slots de enemigos
 .loop_slots:
     ld   a, c
-    cp   40
+    cp   160
     ret  z
     
     ld   h, $C0
