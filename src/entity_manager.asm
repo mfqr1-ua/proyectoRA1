@@ -36,7 +36,7 @@ ecs_init_player:
     ld  [hl+], a                
     ld   a, 16                   ;  pone y inicial 
     ld  [hl+], a                 
-    ld   a, $20                  ;  pone el tile base del jugador 
+    ld   a, $20                  ;  pone el tile base del jugador
     ld  [hl+], a                 
     xor  a                       
     ld  [hl], a                  
