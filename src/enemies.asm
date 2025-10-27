@@ -94,7 +94,31 @@ ecs_update_enemies:
     ld  [enemy_move_timer], a
     jr   nz, .check_spawn
     
-    ld   a, 30                  ; Movimiento cada medio segundo
+    ; Ajustar velocidad según puntuación
+    call get_score_total        ; HL = puntuación total
+    
+    ; Verificar si >= 300 puntos
+    ld   a, h
+    cp   1                      ; HL >= 256?
+    jr   nc, .velocidad_3       ; Sí, nivel 3
+    ld   a, l
+    cp   150
+    jr   nc, .velocidad_2       ; >= 150, nivel 2
+    
+    ; Nivel 1: velocidad normal (< 150 puntos)
+    ld   a, 30
+    jr   .set_timer
+    
+.velocidad_2:
+    ; Nivel 2: más rápido (150-299 puntos)
+    ld   a, 20
+    jr   .set_timer
+    
+.velocidad_3:
+    ; Nivel 3: muy rápido (>= 300 puntos)
+    ld   a, 12
+    
+.set_timer:
     ld  [enemy_move_timer], a
     call mover_enemigos
     

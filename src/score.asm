@@ -110,6 +110,58 @@ add_score:
     ret
 
 ; ------------------------------------------------------------
+; get_score_total: Obtener puntuación total
+; Retorna en HL la puntuación total (máximo 9999)
+; ------------------------------------------------------------
+get_score_total:
+    ; Calcular: millares*1000 + centenas*100 + decenas*10 + unidades
+    ld   hl, 0
+    
+    ; Millares × 1000
+    ld   a, [score_millares]
+    or   a
+    jr   z, .centenas
+    ld   b, a
+.loop_millares:
+    ld   de, 1000
+    add  hl, de
+    dec  b
+    jr   nz, .loop_millares
+    
+.centenas:
+    ; Centenas × 100
+    ld   a, [score_centenas]
+    or   a
+    jr   z, .decenas
+    ld   b, a
+.loop_centenas:
+    ld   de, 100
+    add  hl, de
+    dec  b
+    jr   nz, .loop_centenas
+    
+.decenas:
+    ; Decenas × 10
+    ld   a, [score_decenas]
+    or   a
+    jr   z, .unidades
+    ld   b, a
+.loop_decenas:
+    ld   de, 10
+    add  hl, de
+    dec  b
+    jr   nz, .loop_decenas
+    
+.unidades:
+    ; Unidades
+    ld   a, [score_unidades]
+    ld   e, a
+    ld   d, 0
+    add  hl, de
+    
+    ret
+
+; ------------------------------------------------------------
 ; draw_score: Dibujar marcador en pantalla
 ; Dibuja 4 dígitos en posición (SCORE_X, SCORE_Y)
 ; ------------------------------------------------------------
