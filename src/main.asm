@@ -50,6 +50,40 @@ enemigo::
 estrella::
     DB $FF,$FF,$BD,$BD,$DB,$DB,$E7,$E7
     DB $E7,$E7,$DB,$DB,$BD,$BD,$FF,$FF
+
+; Tiles numéricos 0-9 (tiles $30-$39)
+numeros::
+    ; 0
+    DB $7E,$7E,$FF,$FF,$C3,$C3,$C3,$C3
+    DB $C3,$C3,$C3,$C3,$FF,$FF,$7E,$7E
+    ; 1
+    DB $18,$18,$38,$38,$18,$18,$18,$18
+    DB $18,$18,$18,$18,$18,$18,$7E,$7E
+    ; 2
+    DB $7E,$7E,$FF,$FF,$C3,$C3,$06,$06
+    DB $0C,$0C,$18,$18,$FF,$FF,$FF,$FF
+    ; 3
+    DB $7E,$7E,$FF,$FF,$C3,$C3,$1E,$1E
+    DB $03,$03,$C3,$C3,$FF,$FF,$7E,$7E
+    ; 4
+    DB $06,$06,$0E,$0E,$1E,$1E,$36,$36
+    DB $FF,$FF,$FF,$FF,$06,$06,$06,$06
+    ; 5
+    DB $FF,$FF,$FF,$FF,$C0,$C0,$FE,$FE
+    DB $03,$03,$C3,$C3,$FF,$FF,$7E,$7E
+    ; 6
+    DB $7E,$7E,$FF,$FF,$C0,$C0,$FE,$FE
+    DB $C3,$C3,$C3,$C3,$FF,$FF,$7E,$7E
+    ; 7
+    DB $FF,$FF,$FF,$FF,$03,$03,$06,$06
+    DB $0C,$0C,$18,$18,$18,$18,$18,$18
+    ; 8
+    DB $7E,$7E,$FF,$FF,$C3,$C3,$7E,$7E
+    DB $C3,$C3,$C3,$C3,$FF,$FF,$7E,$7E
+    ; 9
+    DB $7E,$7E,$FF,$FF,$C3,$C3,$FF,$FF
+    DB $7F,$7F,$03,$03,$FF,$FF,$7E,$7E
+
 SECTION "Main Code", ROM0
 main:
     call wait_vblank                
@@ -81,6 +115,12 @@ main:
     ld   hl, estrella
     ld   de, $8000 + 16*40
     ld   b,  16
+    call copy_tiles
+    
+    ; Copiar tiles de números (0-9) a tiles $30-$39
+    ld   hl, numeros
+    ld   de, $8000 + 16*$30
+    ld   b,  160                    ; 10 números × 16 bytes
     call copy_tiles     
              
 
@@ -103,7 +143,10 @@ main:
     call ecs_init_enemies            ;  crea los 3 enemigos como entidades
 
     call dibujaJugador
-    call draw_enemigos               ;  dibuja los enemigos iniciales  
+    call draw_enemigos               ;  dibuja los enemigos iniciales
+    
+    ; Inicializar marcador de puntuación
+    call init_score  
 
     ;sonido ilyas
 

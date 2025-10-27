@@ -189,7 +189,7 @@ check_simple_collision:
 
 ; ------------------------------------------------------------
 ; eliminar_colision
-; Elimina la bala y el enemigo actuales
+; Elimina la bala y el enemigo actuales y suma 10 puntos
 ; ------------------------------------------------------------
 eliminar_colision:
     ; Eliminar enemigo
@@ -201,6 +201,10 @@ eliminar_colision:
     ld   a, [temp_bala_slot]
     ld   c, a
     call eliminar_bala_simple
+    
+    ; Sumar 10 puntos al marcador
+    ld   a, 10
+    call add_score
     
     ret
 
