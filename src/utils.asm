@@ -142,3 +142,30 @@ dibujaJugador:
     ld   d, a
     ld   a, [$C002]               
     jp   pintar_bloque_3x2_desde_xy_con_base 
+ret
+
+
+; Limpia OAM: pone a 00 los 160 bytes desde $FE00
+; Seguro de usar durante VBlank.
+clear_oam:
+    ld   hl, $FE00         ; inicio OAM
+    ld   b, 160            ; bytes a limpiar
+    xor  a                 ; A = 0x00
+.clear_loop:
+    ld  [hl+], a
+    dec  b
+    jr  nz, .clear_loop
+    ret
+
+
+; copia N bytes (B) invirtiendo los bits (2bpp): 0↔3, 1↔2
+; IN: HL=origen, DE=destino, B=bytes
+copy_tiles_invert2bpp:
+.cti_loop:
+    ld   a,[hl+]
+    cpl
+    ld  [de],a
+    inc  de
+    dec  b
+    jr   nz,.cti_loop
+    ret
