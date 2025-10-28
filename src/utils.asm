@@ -3,163 +3,155 @@ INCLUDE "constantes.inc"
 SECTION "utils", ROM0
 
 borrar_logo:
-    ld   hl, $9904                ; apunta a la zona superior del BG
-    ld   b,  $16                  ; pone 22 bytes a 0 arriba
-    xor  a                        ; pone A=0 (tile 0)
+    ld   hl, BG_MAP0+$104         ; zona superior (antes $9904)
+    ld   b,  $16
+    xor  a
     call limpiar_arriba
     call limpiar_abajo
     ret
 
 limpiar_arriba:
-    ld   [hl+], a                 ; escribe 0 y avanza
-    dec  b                        
-    jr   nz, limpiar_arriba       
-    ld   hl, $9924                ; cambia a la zona inferior
-    ld   b,  $0C                  ;  pone 12 bytes a 0 abajo
+    ld   [hl+], a
+    dec  b
+    jr   nz, limpiar_arriba
+    ld   hl, BG_MAP0+$124         ; antes $9924
+    ld   b,  $0C
     ret
 
 limpiar_abajo:
-    ld   [hl+], a                 
-    dec  b                        
+    ld   [hl+], a
+    dec  b
     jr   nz, limpiar_abajo
     ret
 
 wait_vblank:
-    ld  a, [$FF44]                
-    cp  144                       
-    jr  c, wait_vblank            
+    ld  a, [rLY]
+    cp  VBLANK_LINE
+    jr  c, wait_vblank
     ret
 
 read_dpad:
-    ld   a, $20                   
-    ld  [$FF00], a
-    ld   a, [$FF00]               
-    ld   a, [$FF00]               
+    ld   a, P1_SELECT_DPAD
+    ld  [rP1], a
+    ld   a, [rP1]
+    ld   a, [rP1]
     ret
 
 leer_botones:                     ; A/B/Start/Select
-    ld   a, $10                  
-    ld  [$FF00], a
-    ld   a, [$FF00]               
-    ld   a, [$FF00]               
-    ld   a, [$FF00]               
+    ld   a, P1_SELECT_BUTTONS
+    ld  [rP1], a
+    ld   a, [rP1]
+    ld   a, [rP1]
+    ld   a, [rP1]
     ret
 
 memset_256:
-    ld  [hl+], a                  
-    dec b                         
-    jr  nz, memset_256            
+    ld  [hl+], a
+    dec b
+    jr  nz, memset_256
     ret
 
 memcpy_256:
-    ld   a, [hl+]                 
-    ld  [de], a                   
-    inc  de                       
-    dec  b                        
-    jr  nz, memcpy_256            
+    ld   a, [hl+]
+    ld  [de], a
+    inc  de
+    dec  b
+    jr   nz, memcpy_256
     ret
 
 lcd_off:
-    ld   a, [$FF40]               
-    res  7, a                     ;  apaga LCD
-    ld  [$FF40], a
+    ld   a, [rLCDC]
+    res  7, a
+    ld  [rLCDC], a
     ret
 
 lcd_on:
-    ld   a, [$FF40]               ;  lee LCDC
-    set  7, a                     ;  enciende LCD 
-    ld  [$FF40], a
+    ld   a, [rLCDC]
+    set  7, a
+    ld  [rLCDC], a
     ret
 
 copy_tiles:
-    ld   a, [hl+]                 ;  lee byte de ROM
-    ld  [de], a                   ;  escribe byte en VRAM
-    inc  de                       
-    dec  b                        
-    ld   a, b                     
+    ld   a, [hl+]
+    ld  [de], a
+    inc  de
+    dec  b
+    ld   a, b
     cp   0
-    jr   nz, copy_tiles           
+    jr   nz, copy_tiles
     ret
 
-
 pintar_bloque_3x2_desde_xy_con_base:
-    push af                      
-    push de                       
-    call calcular_direccion_bg_desde_xy  
-    call wait_vblank             
+    push af
+    push de
+    call calcular_direccion_bg_desde_xy
+    call wait_vblank
     pop  de
     pop  af
 
-    ld   [hl], a                  ; escribe TL = base
+    ld   [hl], a                  ; TL = base
     inc  hl
     inc  a
-    ld   [hl], a                  ; escribe Tm = base+1
+    ld   [hl], a                  ; TM
     inc  hl
     inc  a
-    ld   [hl], a                  ; escribe TR = base+2
+    ld   [hl], a                  ; TR
 
-    ld   bc, 30                   ; baja una fila (32) y vuelve 2 a la izq
+    ld   bc, BG_NEXTROW_MINUS2    ; 32-2 = 30
     add  hl, bc
 
     inc  a
-    ld   [hl], a                  
+    ld   [hl], a                  ; BL
     inc  hl
     inc  a
-    ld   [hl], a                  
+    ld   [hl], a                  ; BM
     inc  hl
     inc  a
-    ld   [hl], a                  
+    ld   [hl], a                  ; BR
     ret
 
 borrar_bloque_3x2_desde_xy:
-    push de                       ;  guarda (x,y)
-    call calcular_direccion_bg_desde_xy  
-    call wait_vblank              
+    push de
+    call calcular_direccion_bg_desde_xy
+    call wait_vblank
     pop  de
 
-    xor  a                       
-
-    ld   [hl], a                  
+    xor  a
+    ld   [hl], a                  ; TL
     inc  hl
-    ld   [hl], a                 
+    ld   [hl], a                  ; TM
     inc  hl
-    ld   [hl], a                  
+    ld   [hl], a                  ; TR
 
-    ld   bc, 30                  
+    ld   bc, BG_NEXTROW_MINUS2
     add  hl, bc
 
-    ld   [hl], a                  
+    ld   [hl], a                  ; BL
     inc  hl
-    ld   [hl], a                 
+    ld   [hl], a                  ; BM
     inc  hl
-    ld   [hl], a                
+    ld   [hl], a                  ; BR
     ret
 
 dibujaJugador:
-    ld   a, [$C000]               ;  carga x del jugador
+    ld   a, [SLOT0_X]
     ld   e, a
-    ld   a, [$C001]               ;  carga y del jugador
+    ld   a, [SLOT0_Y]
     ld   d, a
-    ld   a, [$C002]               
-    jp   pintar_bloque_3x2_desde_xy_con_base 
+    ld   a, [SLOT0_BASE]
+    jp   pintar_bloque_3x2_desde_xy_con_base
 ret
 
-
-; Limpia OAM: pone a 00 los 160 bytes desde $FE00
-; Seguro de usar durante VBlank.
 clear_oam:
-    ld   hl, $FE00         ; inicio OAM
-    ld   b, 160            ; bytes a limpiar
-    xor  a                 ; A = 0x00
+    ld   hl, OAM_BASE
+    ld   b,  OAM_BYTES_TOTAL
+    xor  a
 .clear_loop:
     ld  [hl+], a
     dec  b
     jr  nz, .clear_loop
     ret
 
-
-; copia N bytes (B) invirtiendo los bits (2bpp): 0↔3, 1↔2
-; IN: HL=origen, DE=destino, B=bytes
 copy_tiles_invertidoColor:
 .cti_loop:
     ld   a,[hl+]

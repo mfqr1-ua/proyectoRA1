@@ -8,7 +8,7 @@ a_lock:     ds 1              ; bloqueo para no repetir disparo con el botón
       ; evita disparos repetidos 
 
 DEF COOLDOWN_DISPARO EQU 10   ; frames de espera tras disparar
-DEF ATTR_ENEMIGO EQU $01      ; marca que identifica a un enemigo
+DEF ATTR_ENEMIGO    EQU $01   ; marca que identifica a un enemigo
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
@@ -94,49 +94,49 @@ main:
 
     ; paletas
     ld   a, $E4
-    ld  [$FF47], a  
+    ld  [rBGP], a
     ld   a, %11100100
-    ld  [$FF48], a 
+    ld  [rOBP0], a 
     ld   a, %00000000
-    ld  [$FF49], a
+    ld  [rOBP1], a
 
     ; carga de tiles a VRAM
     ld   hl, tileNegro
-    ld   de, $8000 + 16*0
+    ld   de, $8000 + TILE_BYTES*0
     ld   b,  16
     call copy_tiles
 
     ld   hl, bala
-    ld   de, $8000 + 16*1
+    ld   de, $8000 + TILE_BYTES*1
     ld   b,  16
     call copy_tiles
 
     ld   hl, naveEspacial
-    ld   de, $8000 + 16*$20
+    ld   de, $8000 + TILE_BYTES*$20
     ld   b,  96
     call copy_tiles
 
     ld   hl, enemigo
-    ld   de, $8000 + 16*26
+    ld   de, $8000 + TILE_BYTES*26
     ld   b,  96
     call copy_tiles
 
     ld   hl, estrella
-    ld   de, $8000 + 16*40
+    ld   de, $8000 + TILE_BYTES*40
     ld   b,  16
     call copy_tiles_invertidoColor
 
     ; dígitos 0..9 (invertidos para OBJ)
     ld   hl, numeros
-    ld   de, $8000 + 16*$30
+    ld   de, $8000 + TILE_BYTES*$30
     ld   b,  10*16
     call copy_tiles_invertidoColor
 
     ; activar sprites 8x8 antes del LCD ON
-    ld   a, [$FF40]
+    ld   a, [rLCDC]
     set  1, a                  ; sprites ON
     res  2, a                  ; tamaño 8x8
-    ld  [$FF40], a
+    ld  [rLCDC], a
 
     call borrar_logo
     call lcd_on
@@ -284,17 +284,17 @@ check_game_over:
 ; reset del juego: borra pantalla, estado y vuelve a inicializar_juego
 reset_game:
     ; limpia mapa BG
-    ld   hl, $9800
+    ld   hl, BG_MAP0
     ld   de, 32*18
     xor  a
 .clear_screen:
     call wait_vblank
     ld   b, 32
 .clear_row:
-    ld a, $00
-    ld   [hl+], a
+    ld   a, $00
+    ld  [hl+], a
     dec  b
-    jr   nz, .clear_row
+    jr  nz, .clear_row
     dec  de
     ld   a, d
     or   e
