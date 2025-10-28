@@ -1,14 +1,15 @@
 INCLUDE "constantes.inc"
 
 SECTION "Variables", WRAM0
-disparo_cd: ds 1           ;   cooldown entre disparos
-balas_tick: ds 1           ;  acumula ticks para mover balas
-a_lock:     ds 1     
+disparo_cd: ds 1
+balas_tick: ds 1
+a_lock:     ds 1
 
       ;  evita disparos repetidos 
 
 DEF COOLDOWN_DISPARO EQU 20 ;  frames de cooldown (ajustado para mejor jugabilidad)
 DEF ATTR_ENEMIGO EQU $01     ; atributo para identificar enemigos
+DEF COOLDOWN_DISPARO EQU 20
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
@@ -33,7 +34,6 @@ bala::
     db $E7,$E7,$E7,$E7,$E7,$E7,$E7,$E7
     db $E7,$E7,$E7,$E7,$E7,$E7,$E7,$E7
 
-
 enemigo::
     DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
     DB $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
@@ -52,7 +52,7 @@ estrella::
     DB $FF,$FF,$BD,$BD,$DB,$DB,$E7,$E7
     DB $E7,$E7,$DB,$DB,$BD,$BD,$FF,$FF
 
-; Tiles numéricos 0-9 (tiles $30-$39) - INVERTIDOS (verde sobre negro)
+; Dígitos 0-9 para copiar a OBJ 0x30..0x39
 numeros::
     ; 0
     DB $81,$81,$00,$00,$3C,$3C,$3C,$3C
@@ -85,84 +85,107 @@ numeros::
     DB $81,$81,$00,$00,$3C,$3C,$00,$00
     DB $80,$80,$FC,$FC,$00,$00,$81,$81
 
+
 SECTION "Main Code", ROM0
 main:
-    call wait_vblank                
-    call lcd_off                     
+    call wait_vblank
+    call lcd_off
+    call clear_oam
 
+    ; Paletas
     ld   a, $E4
-    ld  [$FF47], a                  ; paleta BG
+    ld  [$FF47], a  
+    ld   a, %11100100
+    ld  [$FF48], a 
+    ld   a, %00000000
+    ld  [$FF49], a       ; OBP1 = todo blanco          ; OBP0 
 
-    ld   hl, naveEspacial
-    ld   de, $8000 + 16*$20
-    ld   b,  96
-    call copy_tiles                  ;  copia 6 tiles  $20 a $25
-
+    ; ---- Copia de tiles a $8000 (VRAM) ----
+    ; tile 0: negro
     ld   hl, tileNegro
-    ld   de, $8000
+    ld   de, $8000 + 16*0
     ld   b,  16
-    call copy_tiles                  ;  tile 0 negro
+    call copy_tiles
 
+
+    ; bala -> tile 1
     ld   hl, bala
     ld   de, $8000 + 16*1
     ld   b,  16
-    call copy_tiles   ;  copia el tile de la bala en  1
-    
+    call copy_tiles
+
+    ; nave -> $20..$25
+    ld   hl, naveEspacial
+    ld   de, $8000 + 16*$20
+    ld   b,  96
+    call copy_tiles
+
+    ; enemigo -> $1A.. (ajusta si cambias índices)
     ld   hl, enemigo
     ld   de, $8000 + 16*26
     ld   b,  96
     call copy_tiles
 
+    ; estrella -> $28
     ld   hl, estrella
     ld   de, $8000 + 16*40
     ld   b,  16
     call copy_tiles
-    
-    ; Copiar tiles de números (0-9) a tiles $30-$39
+
+; dígitos 0..9 -> OBJ 0x30..0x39 (invertidos)
     ld   hl, numeros
     ld   de, $8000 + 16*$30
-    ld   b,  160                    ; 10 números × 16 bytes
-    call copy_tiles     
-             
+    ld   b,  10*16
+    call copy_tiles_invert2bpp
 
-    call borrar_logo                  
 
-    call lcd_on                      
+  
+ 
 
-    call man_entity_init             
-    call ecs_init_player 
-    
-    ; Limpiar slots de balas (4-79) para evitar balas fantasma
+    ; ---- Habilitar sprites y 8x8 antes de encender LCD ----
+    ld   a, [$FF40]          ; LCDC
+    set  1, a                ; OBJ enable = 1
+    res  2, a                ; OBJ size   = 8x8
+    ld  [$FF40], a
+
+    call borrar_logo
+    call lcd_on
+ 
+
+    ; ---- Inicialización juego ----
+    call man_entity_init
+    call ecs_init_player
+
+    ; Limpiar slots de balas (4..79)
     ld   hl, $C004
-    ld   b, 76                   ; 19 slots × 4 bytes = 76 bytes
+    ld   b, 76
     xor  a
 .clear_balas:
-    ld   [hl+], a
+    ld  [hl+], a
     dec  b
-    jr   nz, .clear_balas
-    
-    call ecs_init_enemies            ;  crea los 3 enemigos como entidades
+    jr  nz, .clear_balas
 
+    call ecs_init_enemies
     call dibujaJugador
-    call draw_enemigos               ;  dibuja los enemigos iniciales
-    
-    ; Inicializar marcador de puntuación
-    call init_score  
+    call draw_enemigos
 
-    ;sonido ilyas
+    ; ---- Marcador ----
+    call init_score          ; pone 0000 y pinta en OAM (sprites 0..3)
 
-    ld a, $FF       ; Activa todos los canales y el volumen máximo
-    ld [$FF26], a   ; NR52 - Control maestro de sonido (Power ON)
-    ld a, $77       ; Volumen máximo para ambos altavoces (izquierdo y derecho)
-    ld [$FF25], a             ;  dibuja al jugador
+    ; ---- Sonido (si procede) ----
+    ld a, $FF
+    ld [$FF26], a
+    ld a, $77
+    ld [$FF25], a
 
     xor  a
-    ld  [disparo_cd], a              ;  limpia cooldown
-    ld  [balas_tick], a              ;  limpia tick balas
-    ld  [a_lock], a                  ;  limpia el lock del botón
+    ld  [disparo_cd], a
+    ld  [balas_tick], a
+    ld  [a_lock], a
 
+; ------------------- BUCLE PRINCIPAL -------------------
 .bucle_principal:
-    call mover_jugador   
+    call mover_jugador
     call mover_balas
     call ecs_update_enemies          ; Actualizar lógica de enemigos
     call draw_enemigos               ; Redibujar enemigos
@@ -172,19 +195,23 @@ main:
     jr   z, .game_over               ; Si Z flag, hay game over
              
 
-    call leer_botones                ;   A/B/Start/Select
-    bit  0, a                        ;   activo a 0
+    ; Pintar HUD al final del frame (para que no lo pisen otras rutinas)
+    call draw_score_oam
+
+    ; Entrada / disparo
+    call leer_botones
+    bit  0, a
     jr   nz, .A_no_pulsado
 
-    ld   a, [a_lock]                 ;  evita auto-repetición
+    ld   a, [a_lock]
     or   a
     jr   nz, .no_disparo
 
-    ld   a, [disparo_cd]             ;  aplica cooldown
+    ld   a, [disparo_cd]
     or   a
     jr   nz, .bloquear
 
-    call crear_bala_desde_jugador ;  crea una bala
+    call crear_bala_desde_jugador
     ld   a, COOLDOWN_DISPARO
     ld  [disparo_cd], a
 
@@ -195,10 +222,10 @@ main:
 
 .A_no_pulsado:
     xor  a
-    ld  [a_lock], a                  ;  libera el lock al soltar A
+    ld  [a_lock], a
 
 .no_disparo:
-    ld   a, [disparo_cd]             ;  decrementa cooldown
+    ld   a, [disparo_cd]
     or   a
     jr   z, .continuar
     dec  a
