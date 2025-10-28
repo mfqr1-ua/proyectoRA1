@@ -9,7 +9,6 @@ a_lock:     ds 1
 
 DEF COOLDOWN_DISPARO EQU 20 ;  frames de cooldown (ajustado para mejor jugabilidad)
 DEF ATTR_ENEMIGO EQU $01     ; atributo para identificar enemigos
-DEF COOLDOWN_DISPARO EQU 20
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
