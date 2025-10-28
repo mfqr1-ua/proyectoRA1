@@ -1,14 +1,14 @@
 INCLUDE "constantes.inc"
 
 SECTION "Variables", WRAM0
-disparo_cd: ds 1
-balas_tick: ds 1
-a_lock:     ds 1
+disparo_cd: ds 1              ; contador para esperar entre disparos
+balas_tick: ds 1              ; ritmo de avance de balas
+a_lock:     ds 1              ; bloqueo para no repetir disparo con el botón
 
-      ;  evita disparos repetidos 
+      ; evita disparos repetidos 
 
-DEF COOLDOWN_DISPARO EQU 10 ;  frames de cooldown (ajustado para mejor jugabilidad)
-DEF ATTR_ENEMIGO EQU $01     ; atributo para identificar enemigos
+DEF COOLDOWN_DISPARO EQU 10   ; frames de espera tras disparar
+DEF ATTR_ENEMIGO EQU $01      ; marca que identifica a un enemigo
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
@@ -51,7 +51,7 @@ estrella::
     DB $FF,$FF,$BD,$BD,$DB,$DB,$E7,$E7
     DB $E7,$E7,$DB,$DB,$BD,$BD,$FF,$FF
 
-; Dígitos 0-9 para copiar a OBJ 0x30..0x39
+; dígitos 0-9 (para HUD)
 numeros::
     ; 0
     DB $81,$81,$00,$00,$3C,$3C,$3C,$3C
@@ -90,68 +90,62 @@ main:
     call wait_vblank
     call lcd_off
     call clear_oam
+    call init_stars
 
-    ; Paletas
+    ; paletas
     ld   a, $E4
     ld  [$FF47], a  
     ld   a, %11100100
     ld  [$FF48], a 
     ld   a, %00000000
-    ld  [$FF49], a       ; OBP1 = todo blanco          ; OBP0 
+    ld  [$FF49], a
 
-    ; ---- Copia de tiles a $8000 (VRAM) ----
-    ; tile 0: negro
+    ; carga de tiles a VRAM
     ld   hl, tileNegro
     ld   de, $8000 + 16*0
     ld   b,  16
     call copy_tiles
 
-
-    ; bala -> tile 1
     ld   hl, bala
     ld   de, $8000 + 16*1
     ld   b,  16
     call copy_tiles
 
-    ; nave -> $20..$25
     ld   hl, naveEspacial
     ld   de, $8000 + 16*$20
     ld   b,  96
     call copy_tiles
 
-    ; enemigo -> $1A.. (ajusta si cambias índices)
     ld   hl, enemigo
     ld   de, $8000 + 16*26
     ld   b,  96
     call copy_tiles
 
-    ; estrella -> $28
     ld   hl, estrella
     ld   de, $8000 + 16*40
     ld   b,  16
-    call copy_tiles
+    call copy_tiles_invertidoColor
 
-; dígitos 0..9 -> OBJ 0x30..0x39 (invertidos)
+    ; dígitos 0..9 (invertidos para OBJ)
     ld   hl, numeros
     ld   de, $8000 + 16*$30
     ld   b,  10*16
-    call copy_tiles_invert2bpp
+    call copy_tiles_invertidoColor
 
-    ; ---- Habilitar sprites y 8x8 antes de encender LCD ----
-    ld   a, [$FF40]          ; LCDC
-    set  1, a                ; OBJ enable = 1
-    res  2, a                ; OBJ size   = 8x8
+    ; activar sprites 8x8 antes del LCD ON
+    ld   a, [$FF40]
+    set  1, a                  ; sprites ON
+    res  2, a                  ; tamaño 8x8
     ld  [$FF40], a
 
     call borrar_logo
     call lcd_on
- 
 
-    ; ---- Inicialización juego ----
+    ; estado inicial
     call man_entity_init
     call ecs_init_player
 
-    ; Limpiar slots de balas (4..79)
+    ; limpia zona de balas
     ld   hl, $C004
     ld   b, 76
     xor  a
@@ -161,41 +155,41 @@ main:
     jr  nz, .clear_balas
 
 inicializar_juego:
-
+    ; arranque de enemigos y primer pintado
     call ecs_init_enemies
     call dibujaJugador
     call draw_enemigos
 
-    ; ---- Marcador ----
-    call init_score          ; pone 0000 y pinta en OAM (sprites 0..3)
+    ; marcador
+    call init_score
 
-    ; ---- Sonido (si procede) ----
+    ; sonido básico
     ld a, $FF
     ld [$FF26], a
     ld a, $77
     ld [$FF25], a
 
+    ; variables de disparo
     xor  a
     ld  [disparo_cd], a
     ld  [balas_tick], a
     ld  [a_lock], a
 
-; ------------------- BUCLE PRINCIPAL -------------------
+; bucle principal
 .bucle_principal:
     call mover_jugador
     call mover_balas
-    call ecs_update_enemies          ; Actualizar lógica de enemigos
-    call draw_enemigos               ; Redibujar enemigos
-    
-    ; y>=17 termina porque colisiona MIGUEL
-    call check_game_over
-    jr   z, .game_over               ; Si Z flag, hay game over
-             
+    call ecs_update_enemies
+    call draw_enemigos
 
-    ; Pintar HUD al final del frame (para que no lo pisen otras rutinas)
+    ; fin de partida si algún enemigo baja demasiado
+    call check_game_over
+    jr   z, .game_over
+
+    ; HUD al final
     call draw_score_oam
 
-    ; Entrada / disparo
+    ; lectura de botón A y control de disparo
     call leer_botones
     bit  0, a
     jr   nz, .A_no_pulsado
@@ -232,26 +226,25 @@ inicializar_juego:
     jr .bucle_principal
 
 .game_over:
-    ; reinicio
+    ; reinicio completo
     jp reset_game
-   
 
     di
     halt
     ret
 
-; Z flag si hay game over
+; devuelve Z=1 si hay game over, Z=0 si no
 check_game_over:
-    ld   c, 80                   ; Slots de enemigos (80-159)
+    ld   c, 80                 ; recorre enemigos
 .loop_check:
     ld   a, c
     cp   160
     jr   z, .no_game_over
-    
+
     ld   h, $C0
     ld   l, c
-    
-    ; Verificar si es enemigo
+
+    ; ¿es enemigo?
     push hl
     inc  hl
     inc  hl
@@ -260,42 +253,39 @@ check_game_over:
     pop  hl
     cp   ATTR_ENEMIGO
     jr   nz, .next_check
-    
-    ; Es enemigo, verificar si está activo
+
+    ; ¿activo?
     ld   a, [hl]
     or   a
     jr   z, .next_check
-    
-    ; Leer Y del enemigo
+
+    ; Y del enemigo
     inc  hl
     ld   a, [hl]
-    cp   17                      ; Y >= 17 es game over
+    cp   17                    ; si Y>=17, fin
     jr   nc, .is_game_over
     dec  hl
-    
+
 .next_check:
     ld   a, c
     add  a, 4
     ld   c, a
     jr   .loop_check
-    
+
 .no_game_over:
     xor  a
-    inc  a                       ; Clear Z flag (no game over)
+    inc  a                     ; Z=0
     ret
-    
+
 .is_game_over:
-    xor  a                       ; Set Z flag (game over!)
+    xor  a                     ; Z=1
     ret
 
-; ------------------------------------------------------------
-; reset_game: Reinicia el juego completamente
-; ------------------------------------------------------------
+; reset del juego: borra pantalla, estado y vuelve a inicializar_juego
 reset_game:
-
-    ; Limpiar pantalla completa
+    ; limpia mapa BG
     ld   hl, $9800
-    ld   de, 32*18               ; 576 tiles
+    ld   de, 32*18
     xor  a
 .clear_screen:
     call wait_vblank
@@ -310,37 +300,36 @@ reset_game:
     or   e
     ld   a, 0
     jr   nz, .clear_screen
-    
-    ; Reiniciar sistema de entidades
+
+    ; estado base
     call man_entity_init
     call ecs_init_player
-    
-    ; Limpiar slots de balas
+
+    ; limpia balas
     ld   hl, $C004
     ld   b, 76
     xor  a
-.clear_balas:
+.clear_balas2:
     ld   [hl+], a
     dec  b
-    jr   nz, .clear_balas
-    
-    ; Limpiar slots de enemigos
-    ld   hl, $C050               ; Slot 80
+    jr   nz, .clear_balas2
+
+    ; limpia enemigos
+    ld   hl, $C050
     ld   b, 80
 .clear_enemies:
     ld   [hl+], a
     dec  b
     jr   nz, .clear_enemies
-    
-    
-    
-    ; Reiniciar puntuación
+
+    ; marcador a cero
     call init_score
-    
-    ; Reiniciar variables de juego
+
+    ; variables de control
     xor  a
     ld  [disparo_cd], a
     ld  [balas_tick], a
     ld  [a_lock], a
-    
+
+    ; vuelve al arranque de escena (carga enemigos y pinta)
     jp inicializar_juego

@@ -160,7 +160,7 @@ clear_oam:
 
 ; copia N bytes (B) invirtiendo los bits (2bpp): 0↔3, 1↔2
 ; IN: HL=origen, DE=destino, B=bytes
-copy_tiles_invert2bpp:
+copy_tiles_invertidoColor:
 .cti_loop:
     ld   a,[hl+]
     cpl

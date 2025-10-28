@@ -1,23 +1,24 @@
 SECTION "Collisions Code", ROM0
 
-DEF ATTR_ENEMIGO EQU $01
+DEF ATTR_ENEMIGO EQU $01      ; marca para reconocer un enemigo
 
 SECTION "Collision Temp", WRAM0
-temp_bala_x: ds 1
-temp_bala_y: ds 1
-temp_bala_slot: ds 1
-temp_enemy_x: ds 1
-temp_enemy_y: ds 1
-temp_enemy_slot: ds 1
+temp_bala_x: ds 1             ; x de la bala
+temp_bala_y: ds 1             ; y de la bala
+temp_bala_slot: ds 1          ; slot de la bala
+temp_enemy_x: ds 1            ; x del enemigo
+temp_enemy_y: ds 1            ; y del enemigo
+temp_enemy_slot: ds 1         ; slot del enemigo
 
 SECTION "Collisions Code2", ROM0
 
 revisar_colisiones_balas_enemigos:
+    ; recorre todas las balas y las prueba contra los enemigos
     ld   c, 4
 .loop_balas:
     ld   a, c
     cp   40
-    ret  z
+    ret  z                     ; no hay más balas
     ld   a, c
     ld   [temp_bala_slot], a
     ld   h, $C0
@@ -26,15 +27,15 @@ revisar_colisiones_balas_enemigos:
     inc  hl
     inc  hl
     inc  hl
-    ld   a, [hl]
+    ld   a, [hl]               ; byte de tipo
     pop  hl
     cp   ATTR_ENEMIGO
-    jr   z, .next_bala
-    ld   a, [hl+]
+    jr   z, .next_bala         ; esto no es bala
+    ld   a, [hl+]              ; x bala
     or   a
-    jr   z, .next_bala
+    jr   z, .next_bala         ; vacío
     ld   [temp_bala_x], a
-    ld   a, [hl]
+    ld   a, [hl]               ; y bala
     ld   [temp_bala_y], a
     call check_bala_vs_enemigos
 .next_bala:
@@ -44,11 +45,12 @@ revisar_colisiones_balas_enemigos:
     jr   .loop_balas
 
 check_bala_vs_enemigos:
+    ; prueba la bala actual contra todos los enemigos
     ld   b, 80
 .loop_enemigos:
     ld   a, b
     cp   160
-    ret  z
+    ret  z                     ; no hay más enemigos
     ld   a, b
     ld   [temp_enemy_slot], a
     ld   h, $C0
@@ -57,19 +59,19 @@ check_bala_vs_enemigos:
     inc  hl
     inc  hl
     inc  hl
-    ld   a, [hl]
+    ld   a, [hl]               ; tipo
     pop  hl
     cp   ATTR_ENEMIGO
-    jr   nz, .next_enemigo
-    ld   a, [hl+]
+    jr   nz, .next_enemigo     ; no es enemigo
+    ld   a, [hl+]              ; x enemigo
     or   a
-    jr   z, .next_enemigo
+    jr   z, .next_enemigo      ; vacío
     ld   [temp_enemy_x], a
-    ld   a, [hl]
+    ld   a, [hl]               ; y enemigo
     ld   [temp_enemy_y], a
     call check_simple_collision
-    jr   z, .next_enemigo
-    call eliminar_colision
+    jr   z, .next_enemigo      ; no chocan
+    call eliminar_colision     ; chocan: borrar y sumar
     ret
 .next_enemigo:
     ld   a, [temp_enemy_slot]
@@ -78,6 +80,7 @@ check_bala_vs_enemigos:
     jr   .loop_enemigos
 
 check_simple_collision:
+    ; miramos si están cerca en x y en y
     ld   a, [temp_bala_x]
     ld   b, a
     ld   a, [temp_enemy_x]
@@ -94,7 +97,7 @@ check_simple_collision:
     ld   a, b
     sub  c
 .check_diff_x:
-    cp   4
+    cp   4                     ; distancia x < 4
     jr   nc, .no_collision
 .check_y:
     ld   a, [temp_bala_y]
@@ -113,17 +116,18 @@ check_simple_collision:
     ld   a, b
     sub  c
 .check_diff_y:
-    cp   3
+    cp   3                     ; distancia y < 3
     jr   nc, .no_collision
 .collision:
     xor  a
-    inc  a
+    inc  a                     ; 1 = hay choque
     ret
 .no_collision:
-    xor  a
+    xor  a                     ; 0 = no hay choque
     ret
 
 eliminar_colision:
+    ; quita enemigo y bala, y suma puntos
     ld   a, [temp_enemy_slot]
     ld   c, a
     call eliminar_enemigo_por_slot
@@ -135,20 +139,21 @@ eliminar_colision:
     ret
 
 eliminar_bala_simple:
+    ; borra la bala del mapa y limpia su slot
     ld   h, $C0
     ld   l, c
-    ld   a, [hl+]
+    ld   a, [hl+]              ; x
     ld   e, a
-    ld   a, [hl]
+    ld   a, [hl]               ; y
     ld   d, a
     dec  hl
     xor  a
-    ld   [hl+], a
-    ld   [hl+], a
-    ld   [hl+], a
-    ld   [hl], a
+    ld   [hl+], a              ; x=0
+    ld   [hl+], a              ; y=0
+    ld   [hl+], a              ; tile=0
+    ld   [hl], a               ; tipo=0
     call calcular_direccion_bg_desde_xy
     call wait_vblank
     xor  a
-    ld   [hl], a
+    ld   [hl], a               ; borra el tile en pantalla
     ret

@@ -1,46 +1,41 @@
 ; score.asm - Sistema de puntuación (OAM)
 
 SECTION "Score Data", WRAM0
-score_unidades:  ds 1
-score_decenas:   ds 1
-score_centenas:  ds 1
-score_millares:  ds 1
+score_unidades:  ds 1      ; dígito 0..9
+score_decenas:   ds 1      ; dígito 0..9
+score_centenas:  ds 1      ; dígito 0..9
+score_millares:  ds 1      ; dígito 0..9
 
 SECTION "Score Code", ROM0
 
-; Tiles numéricos (0..9 en OBJ $30..$39)
-DEF TILE_0 EQU $30
+DEF TILE_0 EQU $30          ; primer tile de los números (0 en OBJ)
 
-; --- OAM constants ---
+; OAM base y sprites usados para el marcador
 DEF OAM_BASE       EQU $FE00
-; Sprites a usar para el HUD (0..3)
-DEF SCORE_SPR_BASE EQU 100
+DEF INICIO_OAM EQU 0  ; índice de sprite inicial (usa 4 seguidos)
+                            ; ojo: no debe pisar otros sprites del juego
 
-; Coordenadas OAM que cubren BG $9810..$9813
-; $9810=(x=16,y=0) -> Y_oam=16, X_oam=136
+; posición en pantalla del marcador (cuatro dígitos en línea)
 DEF SCORE_OAM_Y    EQU 16
-DEF SCORE_OAM_X0   EQU 136   ; $9810 (millares)
-DEF SCORE_OAM_X1   EQU 144   ; $9811 (centenas)
-DEF SCORE_OAM_X2   EQU 152   ; $9812 (decenas)
-DEF SCORE_OAM_X3   EQU 160   ; $9813 (unidades)
-DEF SCORE_ATTR     EQU $10   ; paleta 0, sin flips
+DEF SCORE_OAM_X0   EQU 136  ; millares
+DEF SCORE_OAM_X1   EQU 144  ; centenas
+DEF SCORE_OAM_X2   EQU 152  ; decenas
+DEF SCORE_OAM_X3   EQU 160  ; unidades
+DEF SCORE_ATTR     EQU $10  ; atributos de OAM (paleta por defecto)
 
-; ------------------------------------------------------------
-; Helper: HL = $FE00 + A*4  (A = índice de sprite)
-; ------------------------------------------------------------
-oam_addr_from_index:
+apuntaOAM:
+    ; HL = OAM_BASE + A*4 (cada sprite ocupa 4 bytes)
     ld   hl, OAM_BASE
-    add  a, a          ; *2
-    add  a, a          ; *4
+    add  a, a
+    add  a, a
     ld   b, 0
     ld   c, a
     add  hl, bc
     ret
 
-; ------------------------------------------------------------
-; init_score
-; ------------------------------------------------------------
 init_score:
+    ; pone la puntuación a 0000 y la dibuja
+    ; llama a esto al inicio y tras reset
     xor  a
     ld  [score_unidades], a
     ld  [score_decenas],  a
@@ -49,10 +44,8 @@ init_score:
     call draw_score_oam
     ret
 
-; ------------------------------------------------------------
-; add_score: A = puntos a sumar (0..255)
-; ------------------------------------------------------------
 add_score:
+    ; límite superior 9999 (se queda en 9999)
     ld   b, a
 .sumar_loop:
     ld   a, b
@@ -83,7 +76,7 @@ add_score:
     xor  a
     ld  [score_centenas], a
 
-    ; millares++
+    ; millares++ (tope en 9)
     ld   a, [score_millares]
     inc  a
     cp   10
@@ -112,15 +105,11 @@ add_score:
     call draw_score_oam
     ret
 
-; ------------------------------------------------------------
-; get_score_total: Obtener puntuación total
-; Retorna en HL la puntuación total (máximo 9999)
-; ------------------------------------------------------------
 get_score_total:
-    ; Calcular: millares*1000 + centenas*100 + decenas*10 + unidades
+    ; devuelve HL = puntuación (0..9999) a partir de los cuatro dígitos
     ld   hl, 0
-    
-    ; Millares × 1000
+
+    ; millares * 1000
     ld   a, [score_millares]
     or   a
     jr   z, .centenas
@@ -130,9 +119,9 @@ get_score_total:
     add  hl, de
     dec  b
     jr   nz, .loop_millares
-    
+
 .centenas:
-    ; Centenas × 100
+    ; centenas * 100
     ld   a, [score_centenas]
     or   a
     jr   z, .decenas
@@ -142,9 +131,9 @@ get_score_total:
     add  hl, de
     dec  b
     jr   nz, .loop_centenas
-    
+
 .decenas:
-    ; Decenas × 10
+    ; decenas * 10
     ld   a, [score_decenas]
     or   a
     jr   z, .unidades
@@ -154,42 +143,38 @@ get_score_total:
     add  hl, de
     dec  b
     jr   nz, .loop_decenas
-    
+
 .unidades:
-    ; Unidades
+    ; + unidades
     ld   a, [score_unidades]
     ld   e, a
     ld   d, 0
     add  hl, de
-    
     ret
 
-; ------------------------------------------------------------
-; draw_score_oam: pinta 4 sprites (M C D U) en OAM 0..3
-; Escribe OAM durante VBlank
-; ------------------------------------------------------------
 draw_score_oam:
+    ; Dibujar marcador (4 dígitos) en OAM. Se hace en VBlank para evitar parpadeo.
     call wait_vblank
 
-    ; --- millares -> sprite 0 ---
-    ld   a, SCORE_SPR_BASE        ; 0
-    call oam_addr_from_index      ; HL = FE00
-    ld   a, SCORE_OAM_Y           ; Y
+    ;  Millares (sprite 0) 
+    ld   a, INICIO_OAM
+    call apuntaOAM          ; HL -> entrada de OAM del sprite 0
+    ld   a, SCORE_OAM_Y               ; fila fija del HUD
     ld  [hl+], a
-    ld   a, SCORE_OAM_X0          ; X
+    ld   a, SCORE_OAM_X0              ; columna del dígito de millares
     ld  [hl+], a
-    ld   a, [score_millares]      ; TILE
-    add  a, TILE_0
+    ld   a, [score_millares]          ; 0..9
+    add  a, TILE_0                    ; convierte dígito a tile
     ld  [hl+], a
-    ld   a, SCORE_ATTR            ; ATTR
+    ld   a, SCORE_ATTR                ; paleta/atributos
     ld  [hl], a
 
-    ; --- centenas -> sprite 1 ---
-    ld   a, SCORE_SPR_BASE+1
-    call oam_addr_from_index
+    ;  Centenas (sprite 1) 
+    ld   a, INICIO_OAM+1
+    call apuntaOAM
     ld   a, SCORE_OAM_Y
     ld  [hl+], a
-    ld   a, SCORE_OAM_X1
+    ld   a, SCORE_OAM_X1              ; posición X para centenas
     ld  [hl+], a
     ld   a, [score_centenas]
     add  a, TILE_0
@@ -197,12 +182,12 @@ draw_score_oam:
     ld   a, SCORE_ATTR
     ld  [hl], a
 
-    ; --- decenas -> sprite 2 ---
-    ld   a, SCORE_SPR_BASE+2
-    call oam_addr_from_index
+    ; Decenas (sprite 2) 
+    ld   a, INICIO_OAM+2
+    call apuntaOAM
     ld   a, SCORE_OAM_Y
     ld  [hl+], a
-    ld   a, SCORE_OAM_X2
+    ld   a, SCORE_OAM_X2              ; posición X para decenas
     ld  [hl+], a
     ld   a, [score_decenas]
     add  a, TILE_0
@@ -210,12 +195,12 @@ draw_score_oam:
     ld   a, SCORE_ATTR
     ld  [hl], a
 
-    ; --- unidades -> sprite 3 ---
-    ld   a, SCORE_SPR_BASE+3
-    call oam_addr_from_index
+    ;  Unidades (sprite 3) 
+    ld   a, INICIO_OAM+3
+    call apuntaOAM
     ld   a, SCORE_OAM_Y
     ld  [hl+], a
-    ld   a, SCORE_OAM_X3
+    ld   a, SCORE_OAM_X3              ; posición X para unidades
     ld  [hl+], a
     ld   a, [score_unidades]
     add  a, TILE_0
