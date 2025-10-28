@@ -8,6 +8,7 @@ a_lock:     ds 1
       ;  evita disparos repetidos 
 
 DEF COOLDOWN_DISPARO EQU 20 ;  frames de cooldown (ajustado para mejor jugabilidad)
+DEF ATTR_ENEMIGO EQU $01     ; atributo para identificar enemigos
 
 SECTION "Tiles ROM", ROM0
 naveEspacial::
@@ -165,6 +166,10 @@ main:
     call mover_balas
     call ecs_update_enemies          ; Actualizar lógica de enemigos
     call draw_enemigos               ; Redibujar enemigos
+    
+    ; y>=17 termina porque colisiona MIGUEL
+    call check_game_over
+    jr   z, .game_over               ; Si Z flag, hay game over
              
 
     call leer_botones                ;   A/B/Start/Select
@@ -202,6 +207,119 @@ main:
 .continuar:
     jr .bucle_principal
 
+.game_over:
+    ; reinicio
+    call reset_game
+    jr .bucle_principal
+
     di
     halt
+    ret
+
+; Z flag si hay game over
+check_game_over:
+    ld   c, 80                   ; Slots de enemigos (80-159)
+.loop_check:
+    ld   a, c
+    cp   160
+    jr   z, .no_game_over
+    
+    ld   h, $C0
+    ld   l, c
+    
+    ; Verificar si es enemigo
+    push hl
+    inc  hl
+    inc  hl
+    inc  hl
+    ld   a, [hl]
+    pop  hl
+    cp   ATTR_ENEMIGO
+    jr   nz, .next_check
+    
+    ; Es enemigo, verificar si está activo
+    ld   a, [hl]
+    or   a
+    jr   z, .next_check
+    
+    ; Leer Y del enemigo
+    inc  hl
+    ld   a, [hl]
+    cp   17                      ; Y >= 17 es game over
+    jr   nc, .is_game_over
+    dec  hl
+    
+.next_check:
+    ld   a, c
+    add  a, 4
+    ld   c, a
+    jr   .loop_check
+    
+.no_game_over:
+    xor  a
+    inc  a                       ; Clear Z flag (no game over)
+    ret
+    
+.is_game_over:
+    xor  a                       ; Set Z flag (game over!)
+    ret
+
+; ------------------------------------------------------------
+; reset_game: Reinicia el juego completamente
+; ------------------------------------------------------------
+reset_game:
+    ; Limpiar pantalla completa
+    ld   hl, $9800
+    ld   de, 32*18               ; 576 tiles
+    xor  a
+.clear_screen:
+    call wait_vblank
+    ld   b, 32
+.clear_row:
+    ld   [hl+], a
+    dec  b
+    jr   nz, .clear_row
+    dec  de
+    ld   a, d
+    or   e
+    ld   a, 0
+    jr   nz, .clear_screen
+    
+    ; Reiniciar sistema de entidades
+    call man_entity_init
+    call ecs_init_player
+    
+    ; Limpiar slots de balas
+    ld   hl, $C004
+    ld   b, 76
+    xor  a
+.clear_balas:
+    ld   [hl+], a
+    dec  b
+    jr   nz, .clear_balas
+    
+    ; Limpiar slots de enemigos
+    ld   hl, $C050               ; Slot 80
+    ld   b, 80
+.clear_enemies:
+    ld   [hl+], a
+    dec  b
+    jr   nz, .clear_enemies
+    
+    ; Reiniciar enemigos
+    call ecs_init_enemies
+    
+    ; Redibujar todo
+    call dibujaJugador
+    call draw_enemigos
+    
+    ; Reiniciar puntuación
+    call init_score
+    
+    ; Reiniciar variables de juego
+    xor  a
+    ld  [disparo_cd], a
+    ld  [balas_tick], a
+    ld  [a_lock], a
+    
     ret
