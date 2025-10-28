@@ -123,7 +123,7 @@ borrar_bloque_3x2_desde_xy:
     inc  hl
     ld   [hl], a                  ; TR
 
-    ld   bc, BG_NEXTROW_MINUS2
+    ld   bc, 30
     add  hl, bc
 
     ld   [hl], a                  ; BL

@@ -27,8 +27,6 @@ DEF BG_MAP1           EQU $9C00  ; tilemap 1
 DEF BG_ROW_STRIDE     EQU 32     ; tiles por fila en BG
 DEF TILE_BYTES        EQU 16     ; bytes por tile (2bpp)
 
-; atajo usado en bloques 3x2: bajar 1 fila (32) y volver 2 = +30
-DEF BG_NEXTROW_MINUS2 EQU 30
 
 ; --- RAM del jugador (slot 0 en tu layout) ---
 DEF SLOT0_X           EQU $C000
