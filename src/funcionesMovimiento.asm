@@ -53,12 +53,7 @@ mover_jugador:
     ld   a, [$C002]
     call pintar_bloque_3x2_desde_xy_con_base
     pop  de
-.esperar_soltar_derecha:
-    call read_dpad
-    bit  0, a
-    jr   z, .esperar_soltar_derecha
     ret
-
 .comprobar_izquierda:
     bit  1, a
     ret  nz
@@ -76,8 +71,4 @@ mover_jugador:
     ld   a, [$C002]
     call pintar_bloque_3x2_desde_xy_con_base
     pop  de
-.esperar_soltar_izquierda:
-    call read_dpad
-    bit  1, a
-    jr   z, .esperar_soltar_izquierda
-    ret
+ret

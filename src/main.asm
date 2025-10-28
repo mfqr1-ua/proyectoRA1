@@ -7,7 +7,7 @@ a_lock:     ds 1
 
       ;  evita disparos repetidos 
 
-DEF COOLDOWN_DISPARO EQU 20 ;  frames de cooldown (ajustado para mejor jugabilidad)
+DEF COOLDOWN_DISPARO EQU 10 ;  frames de cooldown (ajustado para mejor jugabilidad)
 DEF ATTR_ENEMIGO EQU $01     ; atributo para identificar enemigos
 
 SECTION "Tiles ROM", ROM0
@@ -137,10 +137,6 @@ main:
     ld   b,  10*16
     call copy_tiles_invert2bpp
 
-
-  
- 
-
     ; ---- Habilitar sprites y 8x8 antes de encender LCD ----
     ld   a, [$FF40]          ; LCDC
     set  1, a                ; OBJ enable = 1
@@ -163,6 +159,8 @@ main:
     ld  [hl+], a
     dec  b
     jr  nz, .clear_balas
+
+inicializar_juego:
 
     call ecs_init_enemies
     call dibujaJugador
@@ -235,8 +233,8 @@ main:
 
 .game_over:
     ; reinicio
-    call reset_game
-    jr .bucle_principal
+    jp reset_game
+   
 
     di
     halt
@@ -294,6 +292,7 @@ check_game_over:
 ; reset_game: Reinicia el juego completamente
 ; ------------------------------------------------------------
 reset_game:
+
     ; Limpiar pantalla completa
     ld   hl, $9800
     ld   de, 32*18               ; 576 tiles
@@ -302,6 +301,7 @@ reset_game:
     call wait_vblank
     ld   b, 32
 .clear_row:
+    ld a, $00
     ld   [hl+], a
     dec  b
     jr   nz, .clear_row
@@ -332,12 +332,7 @@ reset_game:
     dec  b
     jr   nz, .clear_enemies
     
-    ; Reiniciar enemigos
-    call ecs_init_enemies
     
-    ; Redibujar todo
-    call dibujaJugador
-    call draw_enemigos
     
     ; Reiniciar puntuación
     call init_score
@@ -348,4 +343,4 @@ reset_game:
     ld  [balas_tick], a
     ld  [a_lock], a
     
-    ret
+    jp inicializar_juego
