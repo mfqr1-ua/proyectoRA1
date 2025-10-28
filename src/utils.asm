@@ -97,7 +97,7 @@ pintar_bloque_3x2_desde_xy_con_base:
     inc  a
     ld   [hl], a                  ; TR
 
-    ld   bc, BG_NEXTROW_MINUS2    ; 32-2 = 30
+    ld   bc, 30    ; 32-2 = 30
     add  hl, bc
 
     inc  a
