@@ -80,44 +80,34 @@ check_bala_vs_enemigos:
     jr   .loop_enemigos
 
 check_simple_collision:
-    ; verifica colision entre bala (1x1) y enemigo (3x2)
+    ; bala (1x1) vs enemigo (3x2): verifica si bala dentro del rect enemigo
     ld   a, [temp_bala_x]
     ld   b, a
     ld   a, [temp_enemy_x]
     cp   b
-    jr   z, .check_y
-    jr   c, .enemy_menor
-    sub  b
-    jr   .check_diff_x
-.enemy_menor:
-    ld   a, b
-    ld   b, a
+    jr   nc, .check_x_max      ; bala_x >= enemy_x
+    jr   .no_collision         ; bala_x < enemy_x
+.check_x_max:
     ld   a, [temp_enemy_x]
+    add  a, 3                  ; enemy_x + 3
     ld   c, a
-    ld   a, b
-    sub  c
-.check_diff_x:
-    cp   3                     ; hitbox ajustada: ancho 3 tiles
-    jr   nc, .no_collision
-.check_y:
+    ld   a, [temp_bala_x]
+    cp   c
+    jr   nc, .no_collision     ; bala_x >= enemy_x+3
+.check_y_min:
     ld   a, [temp_bala_y]
     ld   b, a
     ld   a, [temp_enemy_y]
     cp   b
-    jr   z, .collision
-    jr   c, .enemy_y_menor
-    sub  b
-    jr   .check_diff_y
-.enemy_y_menor:
-    ld   a, b
-    ld   b, a
+    jr   nc, .check_y_max      ; bala_y >= enemy_y
+    jr   .no_collision         ; bala_y < enemy_y
+.check_y_max:
     ld   a, [temp_enemy_y]
+    add  a, 2                  ; enemy_y + 2
     ld   c, a
-    ld   a, b
-    sub  c
-.check_diff_y:
-    cp   2                     ; hitbox ajustada: alto 2 tiles
-    jr   nc, .no_collision
+    ld   a, [temp_bala_y]
+    cp   c
+    jr   nc, .no_collision     ; bala_y >= enemy_y+2
 .collision:
     xor  a
     inc  a
