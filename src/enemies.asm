@@ -138,7 +138,7 @@ ecs_update_enemies:
     dec  a
     ld  [enemy_spawn_timer], a
     jr   nz, .end
-    ld   a, 240
+    ld   a, 60
     ld  [enemy_spawn_timer], a
     call spawn_enemigo_si_falta
 .end:
