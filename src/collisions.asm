@@ -80,7 +80,7 @@ check_bala_vs_enemigos:
     jr   .loop_enemigos
 
 check_simple_collision:
-    ; miramos si están cerca en x y en y
+    ; verifica colision entre bala (1x1) y enemigo (3x2)
     ld   a, [temp_bala_x]
     ld   b, a
     ld   a, [temp_enemy_x]
@@ -97,7 +97,7 @@ check_simple_collision:
     ld   a, b
     sub  c
 .check_diff_x:
-    cp   4                     ; distancia x < 4
+    cp   3                     ; hitbox ajustada: ancho 3 tiles
     jr   nc, .no_collision
 .check_y:
     ld   a, [temp_bala_y]
@@ -116,14 +116,14 @@ check_simple_collision:
     ld   a, b
     sub  c
 .check_diff_y:
-    cp   3                     ; distancia y < 3
+    cp   2                     ; hitbox ajustada: alto 2 tiles
     jr   nc, .no_collision
 .collision:
     xor  a
-    inc  a                     ; 1 = hay choque
+    inc  a
     ret
 .no_collision:
-    xor  a                     ; 0 = no hay choque
+    xor  a
     ret
 
 eliminar_colision:
