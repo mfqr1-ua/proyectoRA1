@@ -195,7 +195,7 @@ mover_enemigos:
     jr   .loop_slots
 
 spawn_enemigo_si_falta:
-    ; mantiene hasta 3 enemigos vivos; usa DIV para pseudo-azar en X
+    ; mantiene hasta 3 enemigos vivos con spawn aleatorio sin solapamiento
     call contar_enemigos_vivos
     cp   3
     ret  nc
@@ -203,35 +203,32 @@ spawn_enemigo_si_falta:
     call contar_enemigos_vivos
     cp   3
     ret  nc
-    ld   a, [$FF04]             ; registro DIV
-    and  $0F
+    ld   b, 10                  ; max 10 intentos de generar posicion valida
+.retry_pos:
+    ld   a, [$FF04]             ; DIV para aleatoriedad
+    and  $0F                    ; 0..15
     cp   13
-    jr   c, .check_pos
-    sub  4
-.check_pos:
+    jr   c, .valid_range
+    sub  3                      ; ajusta si >= 13
+.valid_range:
     ld   e, a                   ; X candidata
-    call verificar_posicion_libre
-    jr   nz, .valid_x           ; si no hay conflicto, crear
-    ld   a, e
-    add  a, 4                   ; intenta 4 tiles a la derecha
-    cp   16
-    jr   c, .check_pos2
-    ld   e, 2                   ; si se pasa, usa X=2
-    jr   .valid_x
-.check_pos2:
-    ld   e, a
-.valid_x:
+    call verificar_distancia_minima
+    jr   z, .pos_ok             ; Z=1 => distancia OK
+    dec  b
+    jr   nz, .retry_pos
+    ret                         ; no encontro posicion en 10 intentos
+.pos_ok:
     ld   d, 1                   ; Y inicial
     call crear_enemigo_entidad
     jr   .spawn_loop
 
-verificar_posicion_libre:
-    ; entrada: E=X candidata. salida: Z=0 si libre, Z=1 si muy cerca
+verificar_distancia_minima:
+    ; entrada: E=X candidata. salida: Z=1 si distancia OK, Z=0 si muy cerca
     ld   c, 80
 .loop_slots:
     ld   a, c
     cp   160
-    jr   z, .pos_libre
+    jr   z, .dist_ok
     ld   h, $C0
     ld   l, c
     push hl
@@ -242,32 +239,32 @@ verificar_posicion_libre:
     cp   ATTR_ENEMIGO
     pop  hl
     jr   nz, .next_slot
-    ld   a, [hl]                ; X enemigo
+    ld   a, [hl]                ; X enemigo existente
     or   a
     jr   z, .next_slot
     ld   b, a
     ld   a, e                   ; X candidata
     cp   b
-    jr   c, .calc_dist_1
-    sub  b
-    jr   .check_dist
-.calc_dist_1:
+    jr   nc, .calc_dist
     ld   a, b
     sub  e
+    jr   .check_dist
+.calc_dist:
+    sub  b
 .check_dist:
-    cp   4                      ; distancia minima 4 tiles
-    jr   c, .pos_ocupada
+    cp   4                      ; distancia >= 4
+    jr   c, .dist_mala
 .next_slot:
     ld   a, c
     add  a, 4
     ld   c, a
     jr   .loop_slots
-.pos_libre:
-    xor  a                      ; Z=0 (libre)
-    ret
-.pos_ocupada:
+.dist_ok:
     xor  a
-    inc  a                      ; Z=1 (ocupada)
+    inc  a                      ; Z=1
+    ret
+.dist_mala:
+    xor  a                      ; Z=0
     ret
 
 contar_enemigos_vivos:
