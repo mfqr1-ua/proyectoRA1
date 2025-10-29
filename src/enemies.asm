@@ -195,7 +195,7 @@ mover_enemigos:
     jr   .loop_slots
 
 spawn_enemigo_si_falta:
-    ; mantiene hasta 3 enemigos vivos con spawn aleatorio sin solapamiento
+    ; mantiene hasta 3 enemigos vivos, usa carriles fijos para evitar solapamiento
     call contar_enemigos_vivos
     cp   3
     ret  nc
@@ -203,39 +203,43 @@ spawn_enemigo_si_falta:
     call contar_enemigos_vivos
     cp   3
     ret  nc
-    ld   b, 10                  ; max 10 intentos de generar posicion valida
-.retry_pos:
-    ld   a, [$FF04]             ; DIV para aleatoriedad
-    and  $0F                    ; 0..15
-    cp   13
-    jr   c, .valid_range
-    sub  3                      ; ajusta si >= 13
-.valid_range:
-    ld   e, a                   ; X candidata
-    push bc
-    call contar_enemigos_vivos
-    pop  bc
+    
+    ; selecciona carril aleatorio: 1, 6 u 11
+    ld   a, [$FF04]
+    and  $03
+    cp   3
+    jr   c, .check_carril
+    xor  a
+.check_carril:
     or   a
-    jr   z, .pos_ok             ; si no hay enemigos, crear sin validar
-    push bc
-    call verificar_distancia_minima
-    pop  bc
-    jr   z, .pos_ok             ; Z=1 => distancia OK
-    dec  b
-    jr   nz, .retry_pos
-    ld   e, 6                   ; fallback: crea en X=6 si fallo
-.pos_ok:
-    ld   d, 1                   ; Y inicial
+    jr   z, .carril_1
+    dec  a
+    jr   z, .carril_6
+.carril_11:
+    ld   e, 11
+    jr   .check_disponible
+.carril_6:
+    ld   e, 6
+    jr   .check_disponible
+.carril_1:
+    ld   e, 1
+    
+.check_disponible:
+    ; verifica si hay enemigo en ese carril en Y<5
+    call verificar_carril_libre
+    jr   nz, .spawn_loop
+    
+    ld   d, 1
     call crear_enemigo_entidad
     jr   .spawn_loop
 
-verificar_distancia_minima:
-    ; entrada: E=X candidata. salida: Z=1 si distancia OK, Z=0 si muy cerca
+verificar_carril_libre:
+    ; entrada: E=X del carril. salida: Z=0 si libre, Z=1 si ocupado
     ld   c, 80
 .loop_slots:
     ld   a, c
     cp   160
-    jr   z, .dist_ok
+    jr   z, .carril_libre
     ld   h, $C0
     ld   l, c
     push hl
@@ -246,32 +250,27 @@ verificar_distancia_minima:
     cp   ATTR_ENEMIGO
     pop  hl
     jr   nz, .next_slot
-    ld   a, [hl]                ; X enemigo existente
+    ld   a, [hl]
     or   a
     jr   z, .next_slot
-    ld   b, a
-    ld   a, e                   ; X candidata
-    cp   b
-    jr   nc, .calc_dist
-    ld   a, b
-    sub  e
-    jr   .check_dist
-.calc_dist:
-    sub  b
-.check_dist:
-    cp   5                      ; distancia >=5
-    jr   c, .dist_mala
+    cp   e
+    jr   nz, .next_slot
+    inc  hl
+    ld   a, [hl]
+    dec  hl
+    cp   5
+    jr   c, .carril_ocupado
 .next_slot:
     ld   a, c
     add  a, 4
     ld   c, a
     jr   .loop_slots
-.dist_ok:
+.carril_libre:
     xor  a
-    inc  a                      ; Z=1
     ret
-.dist_mala:
-    xor  a                      ; Z=0
+.carril_ocupado:
+    xor  a
+    inc  a
     ret
 
 contar_enemigos_vivos:
