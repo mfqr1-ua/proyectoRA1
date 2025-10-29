@@ -212,11 +212,18 @@ spawn_enemigo_si_falta:
     sub  3                      ; ajusta si >= 13
 .valid_range:
     ld   e, a                   ; X candidata
+    push bc
+    call contar_enemigos_vivos
+    pop  bc
+    or   a
+    jr   z, .pos_ok             ; si no hay enemigos, crear sin validar
+    push bc
     call verificar_distancia_minima
+    pop  bc
     jr   z, .pos_ok             ; Z=1 => distancia OK
     dec  b
     jr   nz, .retry_pos
-    ret                         ; no encontro posicion en 10 intentos
+    ld   e, 6                   ; fallback: crea en X=6 si fallo
 .pos_ok:
     ld   d, 1                   ; Y inicial
     call crear_enemigo_entidad
