@@ -259,7 +259,7 @@ verificar_distancia_minima:
 .calc_dist:
     sub  b
 .check_dist:
-    cp   4                      ; distancia >= 4
+    cp   5                      ; distancia >=5
     jr   c, .dist_mala
 .next_slot:
     ld   a, c
