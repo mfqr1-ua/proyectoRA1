@@ -80,34 +80,42 @@ check_bala_vs_enemigos:
     jr   .loop_enemigos
 
 check_simple_collision:
-    ; bala (1x1) vs enemigo (3x2): verifica si bala dentro del rect enemigo
+    ; AABB: bala(1x1) vs enemigo(3x2)
+    ; hay colision si: bala_x < enemy_x+3 AND enemy_x < bala_x+1
+    ;                  bala_y < enemy_y+2 AND enemy_y < bala_y+1
+    
+    ; verifica X: bala_x < enemy_x + 3
+    ld   a, [temp_enemy_x]
+    add  a, 3
+    ld   b, a
     ld   a, [temp_bala_x]
+    cp   b
+    jr   nc, .no_collision
+    
+    ; verifica X: enemy_x < bala_x + 1
+    ld   a, [temp_bala_x]
+    inc  a
     ld   b, a
     ld   a, [temp_enemy_x]
     cp   b
-    jr   nc, .check_x_max      ; bala_x >= enemy_x
-    jr   .no_collision         ; bala_x < enemy_x
-.check_x_max:
-    ld   a, [temp_enemy_x]
-    add  a, 3                  ; enemy_x + 3
-    ld   c, a
-    ld   a, [temp_bala_x]
-    cp   c
-    jr   nc, .no_collision     ; bala_x >= enemy_x+3
-.check_y_min:
+    jr   nc, .no_collision
+    
+    ; verifica Y: bala_y < enemy_y + 2
+    ld   a, [temp_enemy_y]
+    add  a, 2
+    ld   b, a
     ld   a, [temp_bala_y]
+    cp   b
+    jr   nc, .no_collision
+    
+    ; verifica Y: enemy_y < bala_y + 1
+    ld   a, [temp_bala_y]
+    inc  a
     ld   b, a
     ld   a, [temp_enemy_y]
     cp   b
-    jr   nc, .check_y_max      ; bala_y >= enemy_y
-    jr   .no_collision         ; bala_y < enemy_y
-.check_y_max:
-    ld   a, [temp_enemy_y]
-    add  a, 2                  ; enemy_y + 2
-    ld   c, a
-    ld   a, [temp_bala_y]
-    cp   c
-    jr   nc, .no_collision     ; bala_y >= enemy_y+2
+    jr   nc, .no_collision
+    
 .collision:
     xor  a
     inc  a
