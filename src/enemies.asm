@@ -203,16 +203,71 @@ spawn_enemigo_si_falta:
     call contar_enemigos_vivos
     cp   3
     ret  nc
-    ld   a, [$FF04]             ; registro DIV (rueda rápido)
+    ld   b, 0                   ; intentos para encontrar posicion valida
+.retry_position:
+    ld   a, [$FF04]             ; registro DIV
     and  $0F
-    cp   15
-    jr   c, .valid_x
-    ld   a, 7                   ; fallback de X si salió 15
+    cp   13
+    jr   c, .check_pos
+    sub  4                      ; ajuste si >= 13
+.check_pos:
+    ld   e, a                   ; X candidata
+    call verificar_posicion_libre
+    jr   z, .valid_x            ; Z=1 => libre
+    inc  b
+    ld   a, b
+    cp   20                     ; max 20 reintentos
+    jr   c, .retry_position
+    ret                         ; no se encontro posicion, salir
 .valid_x:
-    ld   e, a                   ; X
     ld   d, 1                   ; Y inicial
     call crear_enemigo_entidad
     jr   .spawn_loop
+
+verificar_posicion_libre:
+    ; entrada: E=X candidata. salida: Z=1 si libre, Z=0 si muy cerca
+    ld   c, 80
+.loop_slots:
+    ld   a, c
+    cp   160
+    jr   z, .pos_libre
+    ld   h, $C0
+    ld   l, c
+    push hl
+    inc  hl
+    inc  hl
+    inc  hl
+    ld   a, [hl]
+    cp   ATTR_ENEMIGO
+    pop  hl
+    jr   nz, .next_slot
+    ld   a, [hl]                ; X enemigo
+    or   a
+    jr   z, .next_slot
+    ld   b, a
+    ld   a, e                   ; X candidata
+    cp   b
+    jr   c, .calc_dist_1
+    sub  b
+    jr   .check_dist
+.calc_dist_1:
+    ld   a, b
+    sub  e
+.check_dist:
+    cp   4                      ; distancia minima 4 tiles
+    jr   c, .pos_ocupada
+.next_slot:
+    ld   a, c
+    add  a, 4
+    ld   c, a
+    jr   .loop_slots
+.pos_libre:
+    xor  a
+    inc  a                      ; Z=1
+    ret
+.pos_ocupada:
+    xor  a                      ; Z=0
+    ret
 
 contar_enemigos_vivos:
     ; cuenta slots con ATTR_ENEMIGO y X!=0, devuelve A
