@@ -22,7 +22,7 @@ stars_coor:
 SECTION "Stars Code", ROM0
 
 init_stars:
-    ld   hl, $FE10             
+    ld   hl, $FE10              
     ld   de, stars_coor     ; DE -> tabla (Y,X)
     ld   b,  13    ; cuántas estrellas
 .star_loop:
