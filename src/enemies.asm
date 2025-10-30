@@ -393,6 +393,15 @@ get_enemy_position_by_slot:
     ret
 
 eliminar_enemigo_por_slot:
+    ld   a, %10000000
+    ld   [$FF16], a
+    ld   a, %11110011
+    ld   [$FF17], a
+    ld   a, $64
+    ld   [$FF18], a
+    ld   a, %10000000
+    ld   [$FF19], a
+    ret
     ; limpia slot y borra el bloque 3x2 en BG en su posición
     call get_enemy_position_by_slot
     ret  z
