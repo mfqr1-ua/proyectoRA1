@@ -32,6 +32,18 @@ apuntaOAM:
     ld   c, a
     add  hl, bc
     ret
+play_point_sound:
+    push af
+    ld   a, %10000000  ; $FF11: Duración (corta) y patrón de onda (12.5%)
+    ld   [$FF11], a
+    ld   a, %11110011  ; $FF12: Envolvente de volumen (empieza alto, sube, rápido)
+    ld   [$FF12], a
+    ld   a, $00        ; $FF13: Frecuencia (bits bajos)
+    ld   [$FF13], a
+    ld   a, %10000110  ; $FF14: Frecuencia (bits altos) y Trigger (bit 7)
+    ld   [$FF14], a
+    pop  af
+    ret
 
 init_score:
     ; pone la puntuación a 0000 y la dibuja
@@ -71,6 +83,7 @@ add_score:
     ; centenas++
     ld   a, [score_centenas]
     inc  a
+    call play_point_sound 
     cp   10
     jr   c, .centenas_ok
     xor  a
