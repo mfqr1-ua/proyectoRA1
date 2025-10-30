@@ -14,8 +14,8 @@ crear_bala_desde_jugador:
     ld   e, a
     ld   a, [$C001]
     ld   d, a
-    inc  e
-    dec  d
+    inc  e ; centramos en jugador
+    dec  d ; subimos una fila
     bit  7, d
     jr   z, .y_valida
     ld   d, 0

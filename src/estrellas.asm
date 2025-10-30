@@ -1,12 +1,9 @@
-; ==== estrellas_bruto.asm ============================================
-; Pinta estrellas (tile $28) empezando en OAM $FE10 y avanzando a mano.
 
 SECTION "Stars Data", ROM0
 DEF STAR_TILE  EQU $28
 DEF STAR_ATTR  EQU $10
 
 ; Tabla de posiciones OAM (Y, X) ya en píxeles visibles
-; (Y >= 16, X >= 8). Cambia a tu gusto.
 stars_coor:
     db  20,  20
     db  28, 140
@@ -25,7 +22,7 @@ stars_coor:
 SECTION "Stars Code", ROM0
 
 init_stars:
-    ld   hl, $FE10              ; OAM: Y del sprite en FE10 (sprites 0..3 ya usados)
+    ld   hl, $FE10             
     ld   de, stars_coor     ; DE -> tabla (Y,X)
     ld   b,  13    ; cuántas estrellas
 .star_loop:

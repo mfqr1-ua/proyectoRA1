@@ -1,0 +1,193 @@
+SUMMARY:
+	ROM0: 2366 bytes used / 14018 free
+	WRAM0: 177 bytes used / 3919 free
+
+ROM0 bank #0:
+	SECTION: $0000 ($0000 bytes) ["Collisions Code"]
+	SECTION: $0000-$00fb ($00fc bytes) ["Balas Code"]
+	         $0000 = crear_bala_desde_jugador
+	         $000c = crear_bala_desde_jugador.puntero_ok
+	         $001c = crear_bala_desde_jugador.y_valida
+	         $0048 = mover_balas
+	         $0069 = mover_balas.limite_ok
+	         $006b = mover_balas.primer_tramo_loop
+	         $0091 = mover_balas.no_en_borde_1
+	         $00a0 = mover_balas.avanzar_slot_1
+	         $00a6 = mover_balas.tras_primer_tramo
+	         $00ab = mover_balas.escanear_cola
+	         $00bf = mover_balas.no_hay_cola
+	         $00c0 = mover_balas.procesar_cola
+	         $00c1 = mover_balas.segundo_tramo_loop
+	         $00e7 = mover_balas.no_en_borde_2
+	         $00f6 = mover_balas.avanzar_slot_2
+	EMPTY: $00fc-$00ff ($0004 bytes)
+	SECTION: $0100-$014f ($0050 bytes) ["Header"]
+	SECTION: $0150-$0321 ($01d2 bytes) ["Enemies Code"]
+	         $0150 = crear_enemigo_entidad
+	         $0152 = crear_enemigo_entidad.buscar_slot
+	         $0163 = crear_enemigo_entidad.slot_encontrado
+	         $016e = ecs_init_enemies
+	         $018e = ecs_update_enemies
+	         $01a6 = ecs_update_enemies.chk450
+	         $01b2 = ecs_update_enemies.chk300
+	         $01bc = ecs_update_enemies.chk150
+	         $01c9 = ecs_update_enemies.velocidad_2
+	         $01cd = ecs_update_enemies.velocidad_3
+	         $01d1 = ecs_update_enemies.velocidad_4
+	         $01d5 = ecs_update_enemies.velocidad_5
+	         $01d7 = ecs_update_enemies.set_timer
+	         $01dd = ecs_update_enemies.check_spawn
+	         $01ee = ecs_update_enemies.end
+	         $01ef = mover_enemigos
+	         $01f1 = mover_enemigos.loop_slots
+	         $021b = mover_enemigos.kill_enemy
+	         $0221 = mover_enemigos.next_slot
+	         $0227 = spawn_enemigo_si_falta
+	         $022d = spawn_enemigo_si_falta.spawn_loop
+	         $023d = spawn_enemigo_si_falta.check_carril
+	         $0243 = spawn_enemigo_si_falta.carril_11
+	         $0247 = spawn_enemigo_si_falta.carril_6
+	         $024b = spawn_enemigo_si_falta.carril_1
+	         $024d = spawn_enemigo_si_falta.check_disponible
+	         $0259 = verificar_carril_libre
+	         $025b = verificar_carril_libre.loop_slots
+	         $027b = verificar_carril_libre.next_slot
+	         $0281 = verificar_carril_libre.carril_libre
+	         $0283 = verificar_carril_libre.carril_ocupado
+	         $0286 = contar_enemigos_vivos
+	         $028a = contar_enemigos_vivos.loop_slots
+	         $02a2 = contar_enemigos_vivos.next_slot
+	         $02a8 = contar_enemigos_vivos.done
+	         $02aa = draw_enemigos
+	         $02ac = draw_enemigos.loop_slots
+	         $02cd = draw_enemigos.next_slot
+	         $02d3 = pintar_enemigo_3x2
+	         $02f7 = get_enemy_position_by_slot
+	         $030e = get_enemy_position_by_slot.not_enemy
+	         $0310 = eliminar_enemigo_por_slot
+	SECTION: $0322-$04b1 ($0190 bytes) ["Tiles ROM"]
+	         $0322 = naveEspacial
+	         $0382 = tileNegro
+	         $0392 = bala
+	         $03a2 = enemigo
+	         $0402 = estrella
+	         $0412 = numeros
+	SECTION: $04b2-$0606 ($0155 bytes) ["Main Code"]
+	         $04b2 = main
+	         $052b = main.clear_balas
+	         $052f = inicializar_juego
+	         $054f = inicializar_juego.bucle_principal
+	         $057e = inicializar_juego.bloquear
+	         $0585 = inicializar_juego.A_no_pulsado
+	         $0589 = inicializar_juego.no_disparo
+	         $0593 = inicializar_juego.continuar
+	         $0595 = inicializar_juego.game_over
+	         $059b = check_game_over
+	         $059d = check_game_over.loop_check
+	         $05ba = check_game_over.next_check
+	         $05c0 = check_game_over.no_game_over
+	         $05c3 = check_game_over.is_game_over
+	         $05c5 = reset_game
+	         $05cc = reset_game.clear_screen
+	         $05d1 = reset_game.clear_row
+	         $05ea = reset_game.clear_balas2
+	         $05f3 = reset_game.clear_enemies
+	SECTION: $0607-$06f6 ($00f0 bytes) ["Score Code"]
+	         $0607 = apuntaOAM
+	         $0611 = init_score
+	         $0622 = add_score
+	         $0623 = add_score.sumar_loop
+	         $0655 = add_score.millares_ok
+	         $065a = add_score.centenas_ok
+	         $065f = add_score.decenas_ok
+	         $0664 = add_score.unidades_ok
+	         $0667 = add_score.continuar
+	         $066a = add_score.actualizar_display
+	         $066e = get_score_total
+	         $0678 = get_score_total.loop_millares
+	         $067f = get_score_total.centenas
+	         $0686 = get_score_total.loop_centenas
+	         $068d = get_score_total.decenas
+	         $0694 = get_score_total.loop_decenas
+	         $069b = get_score_total.unidades
+	         $06a3 = draw_score_oam
+	SECTION: $06f7-$07b5 ($00bf bytes) ["utils"]
+	         $06f7 = borrar_logo
+	         $0704 = limpiar_arriba
+	         $070e = limpiar_abajo
+	         $0713 = wait_vblank
+	         $071b = read_dpad
+	         $0727 = leer_botones
+	         $0736 = memset_256
+	         $073b = memcpy_256
+	         $0742 = lcd_off
+	         $074b = lcd_on
+	         $0754 = copy_tiles
+	         $075e = pintar_bloque_3x2_desde_xy_con_base
+	         $077c = borrar_bloque_3x2_desde_xy
+	         $0794 = dibujaJugador
+	         $07a3 = clear_oam
+	         $07a9 = clear_oam.clear_loop
+	         $07ae = copy_tiles_invertidoColor.cti_loop
+	         $07ae = copy_tiles_invertidoColor
+	SECTION: $07b6-$0872 ($00bd bytes) ["Collisions Code2"]
+	         $07b6 = revisar_colisiones_balas_enemigos
+	         $07b8 = revisar_colisiones_balas_enemigos.loop_balas
+	         $07db = revisar_colisiones_balas_enemigos.next_bala
+	         $07e3 = check_bala_vs_enemigos
+	         $07e5 = check_bala_vs_enemigos.loop_enemigos
+	         $080e = check_bala_vs_enemigos.next_enemigo
+	         $0816 = check_simple_collision
+	         $0844 = check_simple_collision.collision
+	         $0847 = check_simple_collision.no_collision
+	         $0849 = eliminar_colision
+	         $085d = eliminar_bala_simple
+	SECTION: $0873-$08d6 ($0064 bytes) ["funcionesMovimiento"]
+	         $0873 = calcular_direccion_bg_desde_xy
+	         $087c = calcular_direccion_bg_desde_xy.loop_filas
+	         $0883 = calcular_direccion_bg_desde_xy.filas_ok
+	         $088a = leer_slot0_xy
+	         $0891 = escribir_slot0_x
+	         $0896 = mover_jugador
+	         $08ad = mover_jugador.x_der_ok
+	         $08b9 = mover_jugador.comprobar_izquierda
+	         $08cb = mover_jugador.x_izq_ok
+	SECTION: $08d7-$090e ($0038 bytes) ["EM Code"]
+	         $08d7 = man_entity_init
+	         $08e8 = man_entity_alloc
+	         $08f0 = man_entity_alloc.within_limit
+	         $0900 = ecs_init_player
+	SECTION: $090f-$0928 ($001a bytes) ["Stars Data"]
+	         $090f = stars_coor
+	SECTION: $0929-$0941 ($0019 bytes) ["Stars Code"]
+	         $0929 = init_stars
+	         $0931 = init_stars.star_loop
+	EMPTY: $0942-$3fff ($36be bytes)
+	TOTAL EMPTY: $36c2 bytes
+
+WRAM0 bank #0:
+	SECTION: $c000-$c0a1 ($00a2 bytes) ["EM Data"]
+	         $c000 = component_sprite
+	         $c0a0 = num_entities_alive
+	         $c0a1 = next_free_entity
+	SECTION: $c0a2-$c0a7 ($0006 bytes) ["Collision Temp"]
+	         $c0a2 = temp_bala_x
+	         $c0a3 = temp_bala_y
+	         $c0a4 = temp_bala_slot
+	         $c0a5 = temp_enemy_x
+	         $c0a6 = temp_enemy_y
+	         $c0a7 = temp_enemy_slot
+	SECTION: $c0a8-$c0ab ($0004 bytes) ["Score Data"]
+	         $c0a8 = score_unidades
+	         $c0a9 = score_decenas
+	         $c0aa = score_centenas
+	         $c0ab = score_millares
+	SECTION: $c0ac-$c0ae ($0003 bytes) ["Variables"]
+	         $c0ac = disparo_cd
+	         $c0ad = balas_tick
+	         $c0ae = a_lock
+	SECTION: $c0af-$c0b0 ($0002 bytes) ["Enemies Data"]
+	         $c0af = enemy_move_timer
+	         $c0b0 = enemy_spawn_timer
+	EMPTY: $c0b1-$cfff ($0f4f bytes)
+	TOTAL EMPTY: $0f4f bytes
